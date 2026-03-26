@@ -28,6 +28,25 @@ App consisting of:
 - `just` (command runner)
 - `curl` (for health check command)
 
+## Pre-commit Hooks
+
+Configured in `.pre-commit-config.yaml` with:
+- basic hygiene checks (`yaml`, `toml`, EOF, trailing whitespace, merge conflicts)
+- `ruff` linting (with auto-fix) for `backend/*.py`
+- `ruff format` for `backend/*.py`
+
+Run manually:
+
+```bash
+uv run --directory backend pre-commit run --all-files
+```
+
+Install git hook locally (already done in this repo):
+
+```bash
+uv run --directory backend pre-commit install
+```
+
 ## Backend Setup (without Docker)
 
 Run from repository root:
@@ -82,19 +101,19 @@ just
 
 Available recipes (from `justfile`):
 
-- `just up`  
+- `just up`
   Starts Docker Compose with `--build`.
 
-- `just up -d`  
+- `just up -d`
   Runs in detached mode (passes extra args to compose).
 
-- `just down`  
+- `just down`
   Stops and removes the Compose stack.
 
-- `just rebuild`  
+- `just rebuild`
   Rebuilds backend image without cache.
 
-- `just health`  
+- `just health`
   Calls local health endpoint (`http://127.0.0.1:8000/health`).
 
 ## Typical Flow
