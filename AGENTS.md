@@ -53,3 +53,4 @@ just pre-commit
 - Prefer to use `just` commands for common tasks or suggesting adding a new ones to the `justfile`.
 - Validate with tests and pre-commit hooks before finalizing.
 - If Docker is unavailable due socket permissions, verify app/test locally with `uv` commands.
+- When running custom commands (without `just`) always prepend the command with `uv run` to ensure the correct Python executable is used (e.g. `uv run pytest` instead of bare `pytest`).
