@@ -38,10 +38,10 @@ Configured in `.pre-commit-config.yaml` with:
 Run manually:
 
 ```bash
-uv run --directory backend pre-commit run --all-files
+just pre-commit
 ```
 
-Install git hook locally (already done in this repo):
+Install git hook locally (only first time):
 
 ```bash
 uv run --directory backend pre-commit install
@@ -49,20 +49,21 @@ uv run --directory backend pre-commit install
 
 ## Backend Setup (without Docker)
 
-Run from repository root:
+Run from repository root (without Docker):
 
 ```bash
 cd backend
 uv venv --python 3.13 .venv
 uv sync
-uv run pytest -q
-uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
+cd ..
+just test -q
+just serve-backend
 ```
 
-Health endpoint:
+Send a health check request to the backend:
 
 ```bash
-curl http://127.0.0.1:8000/health
+just health
 ```
 
 Expected response:
@@ -76,19 +77,19 @@ Expected response:
 From repository root:
 
 ```bash
-docker compose up --build
+just up -d
 ```
 
 Then:
 
 ```bash
-curl http://127.0.0.1:8000/health
+just health
 ```
 
 Stop:
 
 ```bash
-docker compose down
+just down
 ```
 
 ## `just` Usage
@@ -99,7 +100,7 @@ List commands:
 just
 ```
 
-Available recipes (from `justfile`):
+Sample recipes (see `justfile` for all commands):
 
 - `just up`
   Starts Docker Compose with `--build`.
@@ -112,6 +113,15 @@ Available recipes (from `justfile`):
 
 - `just rebuild`
   Rebuilds backend image without cache.
+
+- `just pre-commit`
+  Runs pre-commit hooks on all files.
+
+- `just test -q`
+  Runs backend tests (`uv run pytest`).
+
+- `just serve-backend`
+  Runs backend locally via uvicorn on `127.0.0.1:8000`.
 
 - `just health`
   Calls local health endpoint (`http://127.0.0.1:8000/health`).
