@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Fluid Ledger - Bill Summary</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary-fixed": "#000000",
+              "on-error": "#fff7f6",
+              "tertiary-container": "#fd5049",
+              "on-primary-fixed": "#00483f",
+              "on-surface": "#2d3335",
+              "outline-variant": "#adb3b5",
+              "tertiary": "#ba1e21",
+              "primary-fixed": "#97f3e2",
+              "surface-tint": "#006b5f",
+              "on-error-container": "#6e0a12",
+              "error-dim": "#67040d",
+              "secondary-container": "#a3f69c",
+              "error-container": "#fa746f",
+              "surface-bright": "#f8f9fa",
+              "surface-variant": "#dee3e6",
+              "on-secondary-fixed": "#004b0f",
+              "secondary-fixed": "#a3f69c",
+              "primary-fixed-dim": "#89e5d4",
+              "surface": "#f8f9fa",
+              "primary-container": "#97f3e2",
+              "on-secondary": "#eaffe2",
+              "on-secondary-fixed-variant": "#176a21",
+              "secondary-dim": "#096119",
+              "on-secondary-container": "#065f18",
+              "surface-container-lowest": "#ffffff",
+              "on-tertiary-fixed-variant": "#3b0002",
+              "primary": "#006b5f",
+              "inverse-on-surface": "#9b9d9e",
+              "outline": "#767c7e",
+              "on-primary-fixed-variant": "#00675b",
+              "secondary": "#1c6d25",
+              "tertiary-fixed-dim": "#eb433e",
+              "on-surface-variant": "#5a6062",
+              "surface-container-highest": "#dee3e6",
+              "on-tertiary": "#fff7f6",
+              "primary-dim": "#005e53",
+              "inverse-surface": "#0c0f10",
+              "tertiary-fixed": "#fd5049",
+              "surface-container": "#ebeef0",
+              "on-primary": "#e3fff7",
+              "error": "#a83836",
+              "tertiary-dim": "#a80c16",
+              "surface-dim": "#d5dbdd",
+              "on-primary-container": "#005d51",
+              "on-background": "#2d3335",
+              "surface-container-high": "#e5e9eb",
+              "surface-container-low": "#f1f4f5",
+              "background": "#f8f9fa",
+              "inverse-primary": "#a2ffed",
+              "on-tertiary-container": "#1f0001",
+              "secondary-fixed-dim": "#95e88f"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(248, 249, 250, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .currency-superscript {
+            font-size: 0.6em;
+            vertical-align: super;
+            margin-left: 2px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface selection:bg-primary-container">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-[#f1f4f5] dark:bg-[#2d3133] transition-colors">
+<div class="flex items-center justify-between w-full px-6 py-4">
+<div class="flex items-center gap-4">
+<button class="hover:bg-[#f1f4f5] dark:hover:bg-[#3f484a] rounded-full transition-colors p-2 active:scale-95 duration-150 ease-in-out">
+<span class="material-symbols-outlined text-[#006b5f] dark:text-[#52d7c5]">arrow_back</span>
+</button>
+<h1 class="font-manrope font-extrabold text-[#006b5f] dark:text-[#52d7c5] tracking-tight text-xl">Fluid Ledger</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="hover:bg-[#f1f4f5] dark:hover:bg-[#3f484a] rounded-full transition-colors p-2 active:scale-95 duration-150 ease-in-out">
+<span class="material-symbols-outlined text-[#2d3335] dark:text-[#c4c7c8]">receipt_long</span>
+</button>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-40 px-6 max-w-md mx-auto space-y-8">
+<!-- Hero Bill Summary -->
+<section class="text-center space-y-2">
+<p class="font-label text-on-surface-variant text-sm tracking-wide uppercase">Final Split</p>
+<div class="flex justify-center items-start font-headline text-on-surface">
+<span class="text-4xl mt-2 font-bold">$</span>
+<span class="text-7xl font-extrabold tracking-tighter">428</span>
+<span class="text-3xl font-bold mt-2">.50</span>
+</div>
+<p class="text-on-surface-variant font-body">Le Bistro Central • Oct 24</p>
+</section>
+<!-- Bento Breakdown Grid -->
+<section class="grid grid-cols-1 gap-4">
+<!-- Summary Card 1: Main Guest -->
+<div class="bg-surface-container-lowest p-6 rounded-xl space-y-4">
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container">person</span>
+</div>
+<div>
+<h3 class="font-headline font-bold text-on-surface">Marcus T.</h3>
+<p class="text-xs text-on-surface-variant">3 items claimed</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline font-bold text-primary">$142.20</p>
+<span class="text-[10px] bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full font-bold">READY</span>
+</div>
+</div>
+<div class="space-y-2 pt-2">
+<div class="flex justify-between text-sm">
+<span class="text-on-surface-variant">Dry Aged Ribeye</span>
+<span class="text-on-surface">$58.00</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-on-surface-variant">Old Fashioned x2</span>
+<span class="text-on-surface">$36.00</span>
+</div>
+<div class="flex justify-between text-sm border-t border-surface-container-high pt-2">
+<span class="text-on-surface-variant italic">Tax &amp; Service (24%)</span>
+<span class="text-on-surface">$48.20</span>
+</div>
+</div>
+</div>
+<!-- Summary Card 2: Guest -->
+<div class="bg-surface-container-lowest p-6 rounded-xl space-y-4">
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden">
+<img alt="Sarah J." class="w-full h-full object-cover" data-alt="close-up portrait of a smiling young woman with professional lighting and soft blurred background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB797ycXsg28Q9t1vah04PTg8H2BjcdTc0KmKCCAGgoKd2Wbg1VdHd_vtZ2AiZymgQYbWfSSo1GNL80yH5zw18bTDgunfyi40oovmXc4tsKOkDL_zHrA7IfOFp2i4b5yxpU3T21Z-dieOd6bHkkb7zVNGdES6FXXdoMCulPeo125NIC1NbE7SqKwwPiHibGlQHlhHk3PHWnjCnsG3Dwm967lin7AbfY5Wh59qDGcU3VrLTmZAakaX8e38RKWsKRL2okMQ3QqDwkyZwt"/>
+</div>
+<div>
+<h3 class="font-headline font-bold text-on-surface">Sarah J.</h3>
+<p class="text-xs text-on-surface-variant">2 items claimed</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline font-bold text-primary">$96.30</p>
+<span class="text-[10px] bg-surface-container text-on-surface-variant px-2 py-0.5 rounded-full font-bold">PENDING</span>
+</div>
+</div>
+<div class="space-y-2 pt-2">
+<div class="flex justify-between text-sm">
+<span class="text-on-surface-variant">Sea Bass en Papillote</span>
+<span class="text-on-surface">$42.00</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-on-surface-variant">Chardonnay</span>
+<span class="text-on-surface">$18.00</span>
+</div>
+</div>
+</div>
+<!-- Summary Card 3: Guest -->
+<div class="bg-surface-container-lowest p-6 rounded-xl space-y-4">
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-tertiary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-tertiary">group</span>
+</div>
+<div>
+<h3 class="font-headline font-bold text-on-surface">The Rest (Shared)</h3>
+<p class="text-xs text-on-surface-variant">Split between 4 people</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline font-bold text-on-surface">$190.00</p>
+<p class="text-[10px] text-on-surface-variant">$47.50 ea.</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-2">
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="block text-[10px] uppercase tracking-wider text-on-surface-variant font-bold mb-1">Starters</span>
+<p class="text-sm font-semibold">$84.00</p>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="block text-[10px] uppercase tracking-wider text-on-surface-variant font-bold mb-1">Desserts</span>
+<p class="text-sm font-semibold">$106.00</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Final Calculation Details -->
+<section class="bg-surface-container-low rounded-2xl p-6 space-y-4">
+<h4 class="font-headline font-bold text-on-surface text-sm uppercase tracking-widest">Bill Details</h4>
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant">Subtotal</span>
+<span class="font-medium">$345.56</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant">Service Charge (15%)</span>
+<span class="font-medium">$51.83</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant">Tax (9%)</span>
+<span class="font-medium">$31.11</span>
+</div>
+<div class="pt-3 border-t border-outline-variant/20 flex justify-between items-center">
+<span class="font-headline font-bold text-on-surface">Total Amount</span>
+<span class="font-headline font-extrabold text-primary text-xl">$428.50</span>
+</div>
+</div>
+</section>
+</main>
+<!-- Sticky Bottom Actions -->
+<div class="fixed bottom-0 left-0 right-0 p-6 glass-panel z-50">
+<div class="max-w-md mx-auto grid grid-cols-1 gap-3">
+<button class="w-full bg-primary hover:bg-primary-dim text-on-primary font-headline font-bold py-4 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">payments</span>
+                Pay Now
+            </button>
+<button class="w-full bg-transparent text-primary font-headline font-bold py-3 rounded-xl hover:bg-primary-container/20 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">share</span>
+                Share Breakdown
+            </button>
+</div>
+</div>
+<!-- Background Decorative Elements -->
+<div class="fixed top-0 right-0 -z-10 w-64 h-64 bg-primary-container/10 rounded-full blur-[100px]"></div>
+<div class="fixed bottom-0 left-0 -z-10 w-96 h-96 bg-secondary-container/10 rounded-full blur-[120px]"></div>
+</body></html>

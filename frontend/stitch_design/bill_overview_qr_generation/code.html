@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Fluid Ledger - Bill Overview</title>
+<!-- Google Fonts: Manrope & Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary-fixed": "#000000",
+              "on-error": "#fff7f6",
+              "tertiary-container": "#fd5049",
+              "on-primary-fixed": "#00483f",
+              "on-surface": "#2d3335",
+              "outline-variant": "#adb3b5",
+              "tertiary": "#ba1e21",
+              "primary-fixed": "#97f3e2",
+              "surface-tint": "#006b5f",
+              "on-error-container": "#6e0a12",
+              "error-dim": "#67040d",
+              "secondary-container": "#a3f69c",
+              "error-container": "#fa746f",
+              "surface-bright": "#f8f9fa",
+              "surface-variant": "#dee3e6",
+              "on-secondary-fixed": "#004b0f",
+              "secondary-fixed": "#a3f69c",
+              "primary-fixed-dim": "#89e5d4",
+              "surface": "#f8f9fa",
+              "primary-container": "#97f3e2",
+              "on-secondary": "#eaffe2",
+              "on-secondary-fixed-variant": "#176a21",
+              "secondary-dim": "#096119",
+              "on-secondary-container": "#065f18",
+              "surface-container-lowest": "#ffffff",
+              "on-tertiary-fixed-variant": "#3b0002",
+              "primary": "#006b5f",
+              "inverse-on-surface": "#9b9d9e",
+              "outline": "#767c7e",
+              "on-primary-fixed-variant": "#00675b",
+              "secondary": "#1c6d25",
+              "tertiary-fixed-dim": "#eb433e",
+              "on-surface-variant": "#5a6062",
+              "surface-container-highest": "#dee3e6",
+              "on-tertiary": "#fff7f6",
+              "primary-dim": "#005e53",
+              "inverse-surface": "#0c0f10",
+              "tertiary-fixed": "#fd5049",
+              "surface-container": "#ebeef0",
+              "on-primary": "#e3fff7",
+              "error": "#a83836",
+              "tertiary-dim": "#a80c16",
+              "surface-dim": "#d5dbdd",
+              "on-primary-container": "#005d51",
+              "on-background": "#2d3335",
+              "surface-container-high": "#e5e9eb",
+              "surface-container-low": "#f1f4f5",
+              "background": "#f8f9fa",
+              "inverse-primary": "#a2ffed",
+              "on-tertiary-container": "#1f0001",
+              "secondary-fixed-dim": "#95e88f"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .qr-texture {
+        background-image: radial-gradient(#adb3b5 0.5px, transparent 0.5px);
+        background-size: 4px 4px;
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar from Shared Components JSON -->
+<header class="fixed top-0 z-50 w-full bg-[#f8f9fa] dark:bg-[#1a1c1e] flex items-center justify-between px-6 py-4 no-border tonal-shift bg-[#f1f4f5] dark:bg-[#2d3133]">
+<div class="flex items-center gap-4">
+<button class="hover:bg-[#f1f4f5] dark:hover:bg-[#3f484a] rounded-full transition-colors p-2 active:scale-95 duration-150 ease-in-out">
+<span class="material-symbols-outlined text-[#006b5f] dark:text-[#52d7c5]">arrow_back</span>
+</button>
+<h1 class="font-manrope font-extrabold text-[#006b5f] dark:text-[#52d7c5] tracking-tight text-xl">Fluid Ledger</h1>
+</div>
+<div class="flex items-center">
+<!-- Secondary action placeholder -->
+<button class="hover:bg-[#f1f4f5] dark:hover:bg-[#3f484a] rounded-full transition-colors p-2">
+<span class="material-symbols-outlined text-[#2d3335] dark:text-[#c4c7c8]">more_vert</span>
+</button>
+</div>
+</header>
+<main class="pt-24 pb-32 px-6 max-w-md mx-auto">
+<!-- Hero Section: Bill Summary -->
+<section class="mb-10">
+<p class="font-label text-sm text-on-surface-variant mb-1 uppercase tracking-widest">Current Session</p>
+<div class="flex items-baseline justify-between gap-2">
+<h2 class="font-headline font-bold text-4xl text-on-surface">The Alchemist Bar</h2>
+<div class="bg-surface-container-low px-3 py-1 rounded-full flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-xs font-bold text-on-surface-variant font-label">LIVE</span>
+</div>
+</div>
+<p class="text-on-surface-variant mt-2 text-sm">Oct 24, 2023 • 4 items scanned</p>
+</section>
+<!-- QR/Join Code Subtle Placement -->
+<div class="bg-surface-container-low p-6 rounded-xl mb-10 flex items-center justify-between">
+<div class="space-y-1">
+<span class="text-xs font-label text-on-surface-variant uppercase tracking-tighter">Table Join Code</span>
+<p class="font-headline font-extrabold text-2xl tracking-[0.2em] text-primary">#XJ792</p>
+</div>
+<div class="w-16 h-16 bg-surface-container-lowest rounded-lg qr-texture flex items-center justify-center p-2 opacity-60">
+<span class="material-symbols-outlined text-outline-variant text-4xl">qr_code_2</span>
+</div>
+</div>
+<!-- Scanned Items List -->
+<section class="space-y-6">
+<h3 class="font-headline font-bold text-lg text-on-surface px-1">Bill Items</h3>
+<!-- Item 1 -->
+<div class="flex items-center justify-between group">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-surface-container-high rounded-xl flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">local_bar</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface">Smoky Old Fashioned</p>
+<p class="text-sm text-on-surface-variant">Beverages</p>
+</div>
+</div>
+<p class="font-headline font-bold text-lg text-on-surface">
+<span class="text-sm font-normal align-top mr-0.5">$</span>18<span class="text-xs font-normal align-top">.50</span>
+</p>
+</div>
+<!-- Item 2 -->
+<div class="flex items-center justify-between group">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-surface-container-high rounded-xl flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">restaurant</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface">Truffle Arancini</p>
+<p class="text-sm text-on-surface-variant">Starters</p>
+</div>
+</div>
+<p class="font-headline font-bold text-lg text-on-surface">
+<span class="text-sm font-normal align-top mr-0.5">$</span>14<span class="text-xs font-normal align-top">.00</span>
+</p>
+</div>
+<!-- Item 3 -->
+<div class="flex items-center justify-between group">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-surface-container-high rounded-xl flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">wine_bar</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface">Merlot Reserve</p>
+<p class="text-sm text-on-surface-variant">Beverages</p>
+</div>
+</div>
+<p class="font-headline font-bold text-lg text-on-surface">
+<span class="text-sm font-normal align-top mr-0.5">$</span>22<span class="text-xs font-normal align-top">.00</span>
+</p>
+</div>
+<!-- Item 4 -->
+<div class="flex items-center justify-between group">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-surface-container-high rounded-xl flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">dinner_dining</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface">Wagyu Slider Trio</p>
+<p class="text-sm text-on-surface-variant">Mains</p>
+</div>
+</div>
+<p class="font-headline font-bold text-lg text-on-surface">
+<span class="text-sm font-normal align-top mr-0.5">$</span>28<span class="text-xs font-normal align-top">.00</span>
+</p>
+</div>
+</section>
+<!-- Total Breakdown Card -->
+<section class="mt-12 pt-8 border-t border-surface-container-highest">
+<div class="flex justify-between items-center mb-2">
+<span class="text-on-surface-variant">Subtotal</span>
+<span class="text-on-surface font-medium">$82.50</span>
+</div>
+<div class="flex justify-between items-center mb-6">
+<span class="text-on-surface-variant">Tax &amp; Service (15%)</span>
+<span class="text-on-surface font-medium">$12.38</span>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm">
+<div class="flex justify-between items-end">
+<div>
+<p class="text-xs font-label text-on-surface-variant uppercase tracking-widest mb-1">Total Due</p>
+<h4 class="font-headline font-extrabold text-4xl text-on-surface leading-none">
+                            $94<span class="text-xl align-top font-bold text-primary">.88</span>
+</h4>
+</div>
+<div class="text-right">
+<span class="text-xs bg-primary-container text-on-primary-container px-3 py-1 rounded-full font-bold">UNPAID</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Action Bar -->
+<footer class="fixed bottom-0 w-full p-6 pb-8 bg-surface/80 backdrop-blur-xl">
+<div class="max-w-md mx-auto">
+<button class="w-full bg-gradient-to-br from-primary to-primary-dim text-on-primary py-5 rounded-xl font-headline font-bold text-lg flex items-center justify-center gap-3 shadow-lg shadow-primary/20 active:scale-95 transition-transform duration-150">
+<span class="material-symbols-outlined">qr_code_scanner</span>
+                Generate QR Code
+            </button>
+<p class="text-center text-on-surface-variant text-xs mt-4 font-label">Share this code with friends to split the bill instantly.</p>
+</div>
+</footer>
+</body></html>

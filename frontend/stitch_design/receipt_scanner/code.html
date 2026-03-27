@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Fluid Ledger - Scan Receipt</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary-fixed": "#000000",
+              "on-error": "#fff7f6",
+              "tertiary-container": "#fd5049",
+              "on-primary-fixed": "#00483f",
+              "on-surface": "#2d3335",
+              "outline-variant": "#adb3b5",
+              "tertiary": "#ba1e21",
+              "primary-fixed": "#97f3e2",
+              "surface-tint": "#006b5f",
+              "on-error-container": "#6e0a12",
+              "error-dim": "#67040d",
+              "secondary-container": "#a3f69c",
+              "error-container": "#fa746f",
+              "surface-bright": "#f8f9fa",
+              "surface-variant": "#dee3e6",
+              "on-secondary-fixed": "#004b0f",
+              "secondary-fixed": "#a3f69c",
+              "primary-fixed-dim": "#89e5d4",
+              "surface": "#f8f9fa",
+              "primary-container": "#97f3e2",
+              "on-secondary": "#eaffe2",
+              "on-secondary-fixed-variant": "#176a21",
+              "secondary-dim": "#096119",
+              "on-secondary-container": "#065f18",
+              "surface-container-lowest": "#ffffff",
+              "on-tertiary-fixed-variant": "#3b0002",
+              "primary": "#006b5f",
+              "inverse-on-surface": "#9b9d9e",
+              "outline": "#767c7e",
+              "on-primary-fixed-variant": "#00675b",
+              "secondary": "#1c6d25",
+              "tertiary-fixed-dim": "#eb433e",
+              "on-surface-variant": "#5a6062",
+              "surface-container-highest": "#dee3e6",
+              "on-tertiary": "#fff7f6",
+              "primary-dim": "#005e53",
+              "inverse-surface": "#0c0f10",
+              "tertiary-fixed": "#fd5049",
+              "surface-container": "#ebeef0",
+              "on-primary": "#e3fff7",
+              "error": "#a83836",
+              "tertiary-dim": "#a80c16",
+              "surface-dim": "#d5dbdd",
+              "on-primary-container": "#005d51",
+              "on-background": "#2d3335",
+              "surface-container-high": "#e5e9eb",
+              "surface-container-low": "#f1f4f5",
+              "background": "#f8f9fa",
+              "inverse-primary": "#a2ffed",
+              "on-tertiary-container": "#1f0001",
+              "secondary-fixed-dim": "#95e88f"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(248, 249, 250, 0.8);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface min-h-screen flex flex-col items-center">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-[#f8f9fa] dark:bg-[#1a1c1e] flex items-center justify-between w-full px-6 py-4">
+<div class="flex items-center gap-4">
+<button class="hover:bg-[#f1f4f5] dark:hover:bg-[#3f484a] rounded-full transition-colors p-2 active:scale-95 duration-150 ease-in-out">
+<span class="material-symbols-outlined text-[#006b5f] dark:text-[#52d7c5]" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-manrope font-extrabold text-[#006b5f] dark:text-[#52d7c5] tracking-tight text-xl">Fluid Ledger</h1>
+</div>
+<div class="flex items-center">
+<span class="font-inter text-sm text-[#2d3335] dark:text-[#c4c7c8]">Scan</span>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="w-full max-w-md mt-20 px-6 flex-grow flex flex-col gap-8 pb-12">
+<!-- Header Section -->
+<section class="mt-4">
+<h2 class="font-headline text-3xl font-extrabold text-on-surface tracking-tight leading-tight">
+                Capture your <br/>
+<span class="text-primary">Receipts.</span>
+</h2>
+<p class="text-on-surface-variant mt-2 max-w-[80%]">
+                Upload or snap a photo of your paper receipt to automatically split the bill with friends.
+            </p>
+</section>
+<!-- Main Scanning Area (Visual Focus) -->
+<section class="relative w-full aspect-[3/4] rounded-[2rem] bg-surface-container-low overflow-hidden group flex items-center justify-center">
+<!-- Subtle Texture/Mock Camera View -->
+<div class="absolute inset-0 opacity-40 mix-blend-overlay bg-gradient-to-tr from-surface-dim to-surface-bright"></div>
+<!-- Scan Guide Markers -->
+<div class="absolute inset-8 border-2 border-dashed border-outline-variant opacity-30 rounded-xl"></div>
+<!-- Visual Centerpiece -->
+<div class="relative flex flex-col items-center text-center px-12">
+<div class="w-20 h-20 mb-6 bg-primary-container rounded-full flex items-center justify-center text-on-primary-container shadow-sm">
+<span class="material-symbols-outlined text-4xl" data-icon="photo_camera" style="font-variation-settings: 'FILL' 1;">photo_camera</span>
+</div>
+<h3 class="font-headline text-xl font-bold text-on-surface">No receipt selected</h3>
+<p class="text-sm text-on-surface-variant mt-1">Position the paper clearly in the frame for best results.</p>
+</div>
+<!-- Floating Scan Button -->
+<button class="absolute bottom-8 left-1/2 -translate-x-1/2 bg-gradient-to-br from-primary to-primary-dim text-on-primary px-8 py-4 rounded-full font-headline font-bold flex items-center gap-3 shadow-xl active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="document_scanner">document_scanner</span>
+                Scan Receipt
+            </button>
+</section>
+<!-- Secondary Actions Grid -->
+<section class="grid grid-cols-2 gap-4">
+<!-- Select Photo Button -->
+<button class="flex flex-col items-center justify-center p-6 bg-surface-container-lowest rounded-[1.5rem] hover:bg-surface-container-low transition-colors group">
+<div class="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center mb-3 text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" data-icon="image">image</span>
+</div>
+<span class="font-label text-sm font-semibold text-on-surface">Select Photo</span>
+</button>
+<!-- Enter Manually Button -->
+<button class="flex flex-col items-center justify-center p-6 bg-surface-container-lowest rounded-[1.5rem] hover:bg-surface-container-low transition-colors group">
+<div class="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center mb-3 text-secondary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+</div>
+<span class="font-label text-sm font-semibold text-on-surface">Manual Entry</span>
+</button>
+</section>
+<!-- Tips Section -->
+<section class="bg-surface-container-low p-5 rounded-[1.5rem] flex items-start gap-4">
+<div class="text-primary mt-1">
+<span class="material-symbols-outlined" data-icon="lightbulb">lightbulb</span>
+</div>
+<div>
+<h4 class="font-label text-sm font-bold text-on-surface">Scanning Tips</h4>
+<p class="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                    Place the receipt on a dark background and ensure good lighting for 99% accuracy in item detection.
+                </p>
+</div>
+</section>
+</main>
+<!-- Bottom Contextual Status (Hidden on web, used as spacing placeholder on mobile) -->
+<div class="h-20 w-full md:hidden"></div>
+<!-- Floating Navigation Simulation (Mobile) -->
+<nav class="fixed bottom-6 left-6 right-6 h-16 glass-panel rounded-full shadow-2xl flex items-center justify-around px-4 md:hidden">
+<button class="p-3 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+</button>
+<button class="p-3 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+</button>
+<div class="relative -top-6">
+<button class="w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-3xl" data-icon="add">add</span>
+</button>
+</div>
+<button class="p-3 text-primary font-bold">
+<span class="material-symbols-outlined" data-icon="document_scanner" style="font-variation-settings: 'FILL' 1;">document_scanner</span>
+</button>
+<button class="p-3 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</button>
+</nav>
+</body></html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary-fixed": "#000000",
+              "on-error": "#fff7f6",
+              "tertiary-container": "#fd5049",
+              "on-primary-fixed": "#00483f",
+              "on-surface": "#2d3335",
+              "outline-variant": "#adb3b5",
+              "tertiary": "#ba1e21",
+              "primary-fixed": "#97f3e2",
+              "surface-tint": "#006b5f",
+              "on-error-container": "#6e0a12",
+              "error-dim": "#67040d",
+              "secondary-container": "#a3f69c",
+              "error-container": "#fa746f",
+              "surface-bright": "#f8f9fa",
+              "surface-variant": "#dee3e6",
+              "on-secondary-fixed": "#004b0f",
+              "secondary-fixed": "#a3f69c",
+              "primary-fixed-dim": "#89e5d4",
+              "surface": "#f8f9fa",
+              "primary-container": "#97f3e2",
+              "on-secondary": "#eaffe2",
+              "on-secondary-fixed-variant": "#176a21",
+              "secondary-dim": "#096119",
+              "on-secondary-container": "#065f18",
+              "surface-container-lowest": "#ffffff",
+              "on-tertiary-fixed-variant": "#3b0002",
+              "primary": "#006b5f",
+              "inverse-on-surface": "#9b9d9e",
+              "outline": "#767c7e",
+              "on-primary-fixed-variant": "#00675b",
+              "secondary": "#1c6d25",
+              "tertiary-fixed-dim": "#eb433e",
+              "on-surface-variant": "#5a6062",
+              "surface-container-highest": "#dee3e6",
+              "on-tertiary": "#fff7f6",
+              "primary-dim": "#005e53",
+              "inverse-surface": "#0c0f10",
+              "tertiary-fixed": "#fd5049",
+              "surface-container": "#ebeef0",
+              "on-primary": "#e3fff7",
+              "error": "#a83836",
+              "tertiary-dim": "#a80c16",
+              "surface-dim": "#d5dbdd",
+              "on-primary-container": "#005d51",
+              "on-background": "#2d3335",
+              "surface-container-high": "#e5e9eb",
+              "surface-container-low": "#f1f4f5",
+              "background": "#f8f9fa",
+              "inverse-primary": "#a2ffed",
+              "on-tertiary-container": "#1f0001",
+              "secondary-fixed-dim": "#95e88f"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-nav {
+            background: rgba(248, 249, 250, 0.8);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface min-h-screen flex flex-col">
+<!-- TopAppBar Shell (Shared Component Mapping) -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-[#f1f4f5] dark:bg-[#2d3133] flex items-center justify-between w-full px-6 py-4">
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center w-10 h-10 hover:bg-[#f1f4f5] dark:hover:bg-[#3f484a] rounded-full transition-colors active:scale-95 duration-150 ease-in-out">
+<span class="material-symbols-outlined text-[#006b5f] dark:text-[#52d7c5]" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-manrope font-extrabold text-[#006b5f] dark:text-[#52d7c5] tracking-tight text-xl">Fluid Ledger</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="flex items-center justify-center w-10 h-10 hover:bg-[#f1f4f5] dark:hover:bg-[#3f484a] rounded-full transition-colors active:scale-95 duration-150 ease-in-out">
+<span class="material-symbols-outlined text-[#2d3335] dark:text-[#c4c7c8]" data-icon="search">search</span>
+</button>
+</div>
+</header>
+<!-- Main Canvas: Dish Swiper Layout -->
+<main class="flex-grow flex flex-col items-center justify-center px-6 pt-24 pb-12 overflow-hidden relative">
+<!-- Background Subtle Glow/Depth -->
+<div class="absolute inset-0 pointer-events-none opacity-20 overflow-hidden">
+<div class="absolute -top-24 -right-24 w-96 h-96 bg-primary rounded-full blur-[120px]"></div>
+<div class="absolute -bottom-24 -left-24 w-96 h-96 bg-secondary-container rounded-full blur-[120px]"></div>
+</div>
+<!-- The Swiper Stack -->
+<div class="relative w-full max-w-md aspect-[3/4] group">
+<!-- Underneath Card (Visual Depth) -->
+<div class="absolute inset-0 bg-surface-container-low rounded-xl scale-95 translate-y-4 opacity-50 shadow-sm border-0"></div>
+<!-- Active Card -->
+<div class="relative inset-0 w-full h-full bg-surface-container-lowest rounded-xl shadow-[0_32px_64px_-12px_rgba(45,51,53,0.06)] overflow-hidden flex flex-col transform transition-transform duration-300">
+<!-- Dish Image -->
+<div class="relative flex-grow overflow-hidden">
+<img alt="Gourmet Bowl" class="w-full h-full object-cover" data-alt="overhead shot of a vibrant buddha bowl with roasted chickpeas, avocado, and fresh greens on a minimalist ceramic plate" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqCoSCX_7jtF5ujjYLAb363wmbgp4QEfhshp4bl1T9UT2M82Gw5TZuN5MnUL-E9Qe7w7vnvEqYFsh_gQ4Hw35j-UJjSioF2LvIsp8xQWVOwjiHtraTccrVBbCI5kiXuJFDniPChIjpbmU0E9qHMr812OpiE1ehpUyL_tsnclSja1ZENUYRj62Z2g1dJy8ftyWV5CQVOJP0kqGCBagL0KDckCtTB2wXxnuUUKhr1KjDNcoJtfGEF-mrGCulZx-8qJ3uusxxp7z-JbQB"/>
+<!-- Gradient Overlay for Legibility -->
+<div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+<!-- Tag Badge -->
+<div class="absolute top-6 left-6 px-3 py-1 bg-surface-container-lowest/90 backdrop-blur-md rounded-full">
+<span class="text-[10px] font-bold uppercase tracking-wider text-primary">Chef's Choice</span>
+</div>
+</div>
+<!-- Card Content -->
+<div class="p-8 space-y-4">
+<div class="flex justify-between items-start">
+<div class="space-y-1">
+<h2 class="font-headline text-3xl font-extrabold text-on-surface tracking-tight">Garden Harvest Bowl</h2>
+<p class="font-body text-sm text-on-surface-variant leading-relaxed">Roasted quinoa, tahini-maple drizzle, and seasonal root vegetables.</p>
+</div>
+</div>
+<!-- Price Display (Editorial Style) -->
+<div class="flex items-baseline gap-1">
+<span class="font-body text-sm font-semibold text-on-surface-variant opacity-70">$</span>
+<span class="font-headline text-4xl font-bold text-on-surface tracking-tighter">18</span>
+<span class="font-headline text-lg font-bold text-on-surface align-top -mt-4">.50</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Interaction Cues (Swipe Buttons) -->
+<div class="mt-12 w-full max-w-sm flex items-center justify-between px-4">
+<!-- Pass Button -->
+<div class="flex flex-col items-center gap-3">
+<button class="w-16 h-16 flex items-center justify-center bg-surface-container-lowest rounded-full shadow-lg border-0 hover:bg-error-container/10 transition-all active:scale-90 group">
+<span class="material-symbols-outlined text-error text-3xl" data-icon="close">close</span>
+</button>
+<span class="font-label text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant opacity-40">Pass</span>
+</div>
+<!-- Detailed Info (Center) -->
+<button class="w-12 h-12 flex items-center justify-center bg-surface-container-low rounded-full transition-all active:scale-95">
+<span class="material-symbols-outlined text-outline text-xl" data-icon="info">info</span>
+</button>
+<!-- Like/Add Button -->
+<div class="flex flex-col items-center gap-3">
+<button class="w-16 h-16 flex items-center justify-center bg-primary rounded-full shadow-lg shadow-primary/20 hover:bg-primary-dim transition-all active:scale-90 group">
+<span class="material-symbols-outlined text-on-primary text-3xl" data-icon="favorite" data-weight="fill" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</button>
+<span class="font-label text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Savor</span>
+</div>
+</div>
+<!-- Horizontal Swipe Hint Track -->
+<div class="absolute bottom-12 w-full flex justify-center pointer-events-none opacity-20">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined" data-icon="keyboard_double_arrow_left">keyboard_double_arrow_left</span>
+<span class="font-label text-[10px] font-bold tracking-[0.3em] uppercase">Swipe to decide</span>
+<span class="material-symbols-outlined" data-icon="keyboard_double_arrow_right">keyboard_double_arrow_right</span>
+</div>
+</div>
+</main>
+<!-- Contextual Hint for Mobile Navigation (If applicable, but suppressed per transactional focus) -->
+<!-- Suppressed navigation shell to prioritize focus on the dish card interaction canvas -->
+</body></html>
