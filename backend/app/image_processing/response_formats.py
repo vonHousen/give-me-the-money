@@ -43,3 +43,11 @@ class ProcessedReceipt(BaseModel):
         pattern=r"^\d{10}$",
         description="The NIP number just above the 'PARAGON FISKALNY' header. Must be exactly 10 digits.",
     )
+    restaurant_address: str | None = Field(
+        default=None,
+        description="The restaurant's address."
+    )
+    restaurant_name: str | None = Field(
+        default=None,
+        description="The restaurant's name."
+    )

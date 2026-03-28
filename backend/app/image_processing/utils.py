@@ -38,6 +38,23 @@ def decode_image(img_b64: str, mime_type: str) -> tuple[bytes, str]:
     return image_bytes, resolved_mime
 
 
+def log_extracted_restaurant_attributes(
+    parsed_receipt: response_formats.ProcessedReceipt,
+) -> None:
+    optional_attributes = {
+        "restaurant_name": parsed_receipt.restaurant_name,
+        "restaurant_address": parsed_receipt.restaurant_address,
+        "nip": parsed_receipt.nip,
+    }
+    extracted = {
+        key: value
+        for key, value in optional_attributes.items()
+        if value and value.strip()
+    }
+    if extracted:
+        LOGGER.info(f"Receipt restaurant attributes extracted: {extracted}")
+
+
 def coerce_raw_response(parsed_response: Any) -> response_formats.ProcessedReceipt:
     if parsed_response is None:
         raise ImageProcessingParseError("gemini returned empty parsed response")

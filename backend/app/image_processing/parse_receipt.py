@@ -53,6 +53,5 @@ def parse_receipt(img_b64: str, mime_type: str = "image/jpeg") -> ProcessedRecei
     LOGGER.debug("LLM call elapsed time: %.3fs", llm_call_elapsed)
 
     parsed_receipt: response_formats.ProcessedReceipt = utils.coerce_raw_response(response.parsed)
-    if parsed_receipt.nip and parsed_receipt.nip.strip():
-        LOGGER.info("Receipt NIP extracted: %s", parsed_receipt.nip)
+    utils.log_extracted_restaurant_attributes(parsed_receipt)
     return utils.to_model_processed_receipt(parsed_receipt)

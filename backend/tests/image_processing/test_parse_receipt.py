@@ -14,6 +14,7 @@ from app.image_processing.response_formats import ProcessedReceipt
 
 parse_receipt_module = importlib.import_module("app.image_processing.parse_receipt")
 parse_receipt = parse_receipt_module.parse_receipt
+utils_module = importlib.import_module("app.image_processing.utils")
 
 
 class _FakePart:
@@ -199,7 +200,7 @@ def test_parse_receipt_when_nip_is_non_empty_expect_nip_logged(
         },
     )
     _install_fake_genai(monkeypatch, parsed=parsed, capture=capture)
-    log_calls: list[tuple[str, str]] = []
+    log_calls: list[str] = []
 
     class _FakeLogger:
         @staticmethod
@@ -207,13 +208,53 @@ def test_parse_receipt_when_nip_is_non_empty_expect_nip_logged(
             return None
 
         @staticmethod
-        def info(message: str, nip: str) -> None:
-            log_calls.append((message, nip))
+        def info(*args: Any, **_kwargs: Any) -> None:
+            log_calls.append(args[0] if args else "")
 
-    monkeypatch.setattr(parse_receipt_module, "LOGGER", _FakeLogger)
+    monkeypatch.setattr(utils_module, "LOGGER", _FakeLogger)
 
     # Act
     _ = parse_receipt(payload)
 
     # Assert
-    assert log_calls == [("Receipt NIP extracted: %s", "1234567890")]
+    assert log_calls[0] == "Receipt restaurant attributes extracted: {'nip': '1234567890'}"
+
+
+def test_parse_receipt_when_restaurant_attributes_present_expect_logged(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Arrange
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    payload = base64.b64encode(b"fake image bytes").decode("utf-8")
+    capture: dict[str, Any] = {}
+    parsed = ProcessedReceipt.model_validate(
+        {
+            "rows": [{"item_name": "Soup", "item_count": 1, "total_cost": "12.00"}],
+            "total_value": "12.00",
+            "restaurant_name": "Bistro XYZ",
+            "restaurant_address": "Main Street 10, Warsaw",
+        },
+    )
+    _install_fake_genai(monkeypatch, parsed=parsed, capture=capture)
+    log_calls: list[str] = []
+
+    class _FakeLogger:
+        @staticmethod
+        def debug(*_args: Any, **_kwargs: Any) -> None:
+            return None
+
+        @staticmethod
+        def info(*args: Any, **_kwargs: Any) -> None:
+            log_calls.append(args[0] if args else "")
+
+    monkeypatch.setattr(utils_module, "LOGGER", _FakeLogger)
+
+    # Act
+    _ = parse_receipt(payload)
+
+    # Assert
+    extracted: dict[str, str] = {
+        "restaurant_name": "Bistro XYZ",
+        "restaurant_address": "Main Street 10, Warsaw",
+    }
+    assert log_calls[0] == f"Receipt restaurant attributes extracted: {extracted}"

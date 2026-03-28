@@ -20,6 +20,7 @@ PROMPT_RECEIPT_PARSER = dedent(f"""
           where 3 intances of 'Napar imbirowy'
             with a 18,00 price each and the total cost of all these instances is 54,00;
     - The receipt have a 'PARAGON FISKALNY' header. Just above it, on the left, you should find the NIP number (usually 10 digits).
+    - At the very top of the receipt (above the 'PARAGON FISKALNY' header) you can find a restaurant's address and their name (often the name is in bold).
     </hints>
 
 
