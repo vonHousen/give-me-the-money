@@ -11,7 +11,7 @@ from app.image_processing import response_formats
 from app.image_processing.exceptions import ImageProcessingParseError
 from app.image_processing.model import ReceiptRow
 
-DEFAULT_GEMINI_MODEL = "gemini-3.1-flash"
+DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite-preview"
 DEFAULT_CURRENCY_CODE = "PLN"
 
 LOGGER = logging.getLogger(__name__)
