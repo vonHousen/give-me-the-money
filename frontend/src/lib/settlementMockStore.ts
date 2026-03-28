@@ -1,11 +1,12 @@
-import { roundMoney } from '@/lib/utils'
-import type {
-  CreateSettlementRequest,
-  SettlementItemWire,
-  SettlementResponse,
-  SettlementSummaryPayload,
-  SettlementSummaryPerson,
-  SettlementSummaryLine,
+import { randomUuid, roundMoney } from '@/lib/utils'
+import {
+  normalizeSettlementItem,
+  type CreateSettlementRequest,
+  type SettlementItemWire,
+  type SettlementResponse,
+  type SettlementSummaryPayload,
+  type SettlementSummaryPerson,
+  type SettlementSummaryLine,
 } from '@/lib/settlementTypes'
 
 export type MockParticipant = {
@@ -21,8 +22,8 @@ type MockSettlementRecord = {
   items: SettlementItemWire[]
   participants: MockParticipant[]
   assignments: Record<string, string[]>
-  /** participantId -> claimed item ids */
-  claims: Record<string, string[]>
+  /** participantId -> itemId -> quantity claimed (0 = omit key) */
+  claims: Record<string, Record<string, number>>
 }
 
 const store = new Map<string, MockSettlementRecord>()
@@ -35,23 +36,23 @@ function recordToResponse(rec: MockSettlementRecord): SettlementResponse {
   return {
     id: rec.id,
     name: rec.name,
-    items: rec.items.map((i) => ({ ...i })),
+    items: rec.items.map((i) => normalizeSettlementItem(i)),
     users: rec.participants.map((p) => ({ id: p.id, name: p.name })),
     assignments: { ...rec.assignments },
   }
 }
 
 export function mockCreateSettlement(body: CreateSettlementRequest): SettlementResponse {
-  const id = crypto.randomUUID()
-  const ownerId = crypto.randomUUID()
+  const id = randomUuid()
+  const ownerId = randomUuid()
   const title = body.name.trim() || 'Receipt'
   const rec: MockSettlementRecord = {
     id,
     name: title,
-    items: body.items.map((i) => ({ ...i })),
+    items: body.items.map((i) => normalizeSettlementItem(i)),
     participants: [{ id: ownerId, name: title, isOwner: true, swipeFinished: false }],
     assignments: {},
-    claims: { [ownerId]: [] },
+    claims: { [ownerId]: {} },
   }
   store.set(id, rec)
   return recordToResponse(rec)
@@ -73,14 +74,14 @@ export function mockJoinSettlement(
   if (!trimmed) {
     throw new Error('Name is required')
   }
-  const participantId = crypto.randomUUID()
+  const participantId = randomUuid()
   rec.participants.push({
     id: participantId,
     name: trimmed,
     isOwner: false,
     swipeFinished: false,
   })
-  rec.claims[participantId] = []
+  rec.claims[participantId] = {}
   return { participantId, settlement: recordToResponse(rec) }
 }
 
@@ -112,22 +113,29 @@ export function mockRecordItemClaim(
   settlementId: string,
   participantId: string,
   itemId: string,
-  claimed: boolean,
+  quantityClaimed: number,
 ): void {
   const rec = store.get(settlementId)
   if (!rec) {
     throw new Error('Settlement not found')
   }
-  if (!rec.claims[participantId]) {
-    rec.claims[participantId] = []
+  const item = rec.items.find((x) => x.id === itemId)
+  if (!item) {
+    throw new Error('Item not found')
   }
-  const arr = rec.claims[participantId]
-  if (claimed) {
-    if (!arr.includes(itemId)) {
-      arr.push(itemId)
-    }
+  const n = normalizeSettlementItem(item)
+  const q = Math.floor(quantityClaimed)
+  if (!Number.isFinite(q) || q < 0 || q > n.quantity) {
+    throw new Error('Invalid claim quantity')
+  }
+  if (!rec.claims[participantId]) {
+    rec.claims[participantId] = {}
+  }
+  const map = rec.claims[participantId]
+  if (q === 0) {
+    delete map[itemId]
   } else {
-    rec.claims[participantId] = arr.filter((id) => id !== itemId)
+    map[itemId] = q
   }
 }
 
@@ -149,30 +157,35 @@ export function mockFinishSettlement(settlementId: string): { summary: Settlemen
     throw new Error('Settlement not found')
   }
 
-  const itemById = new Map(rec.items.map((i) => [i.id, i]))
-  const claimantsByItem = new Map<string, string[]>()
+  const itemById = new Map(rec.items.map((i) => [i.id, normalizeSettlementItem(i)]))
 
-  for (const [pid, itemIds] of Object.entries(rec.claims)) {
-    for (const iid of itemIds) {
-      if (!claimantsByItem.has(iid)) {
-        claimantsByItem.set(iid, [])
-      }
-      claimantsByItem.get(iid)!.push(pid)
+  for (const item of itemById.values()) {
+    let sum = 0
+    for (const pid of Object.keys(rec.claims)) {
+      const q = rec.claims[pid]?.[item.id] ?? 0
+      sum += q
+    }
+    if (sum > item.quantity) {
+      throw new Error(
+        `Claims for "${item.name}" exceed the quantity on the bill (${sum} > ${item.quantity}).`,
+      )
     }
   }
 
   const people: SettlementSummaryPerson[] = rec.participants.map((p) => {
     const myItems: SettlementSummaryLine[] = []
-    for (const [itemId, pids] of claimantsByItem) {
-      if (!pids.includes(p.id)) {
+    const byItem = rec.claims[p.id] ?? {}
+    for (const item of itemById.values()) {
+      const qty = byItem[item.id] ?? 0
+      if (qty <= 0) {
         continue
       }
-      const item = itemById.get(itemId)
-      if (!item) {
-        continue
-      }
-      const share = item.price / pids.length
-      myItems.push({ name: item.name, price: roundMoney(share) })
+      const linePrice = roundMoney(item.unitPrice * qty)
+      myItems.push({
+        name: qty > 1 ? `${item.name} ×${qty}` : item.name,
+        price: linePrice,
+        quantity: qty,
+      })
     }
     return {
       id: p.id,

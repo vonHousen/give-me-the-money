@@ -50,13 +50,28 @@ describe('useSwipe', () => {
     expect(onSwipe).not.toHaveBeenCalled()
   })
 
-  it('resets deltaX to 0 after throw animation completes', () => {
+  it('keeps deltaX off-screen after throw so the card does not snap back before unmount', () => {
     const { result } = renderHook(() => useSwipe({}))
 
     act(() => result.current.onPointerDown(mockPointerDown(0)))
     act(() => result.current.onPointerMove({ clientX: 120 } as React.PointerEvent))
     act(() => { result.current.onPointerUp(); vi.runAllTimers() })
 
-    expect(result.current.deltaX).toBe(0)
+    expect(result.current.deltaX).toBe(400 * 1.5)
+  })
+
+  it('starts fresh at deltaX = 0 on a new hook instance (deck remount)', () => {
+    const { result, unmount } = renderHook(() => useSwipe({ threshold: 100 }))
+
+    act(() => result.current.onPointerDown(mockPointerDown(0)))
+    act(() => result.current.onPointerMove({ clientX: 120 } as React.PointerEvent))
+    act(() => { result.current.onPointerUp(); vi.runAllTimers() })
+
+    expect(result.current.deltaX).toBe(400 * 1.5)
+
+    unmount()
+
+    const { result: result2 } = renderHook(() => useSwipe({ threshold: 100 }))
+    expect(result2.current.deltaX).toBe(0)
   })
 })

@@ -6,6 +6,7 @@ import {
   getSettlementStatus,
   joinSettlement,
   markSwipeComplete,
+  recordItemClaim,
   resetSettlementMockStore,
 } from './settlementApi'
 
@@ -35,7 +36,13 @@ describe('createSettlement', () => {
   const body = {
     name: 'Test',
     items: [
-      { id: '00000000-0000-0000-0000-000000000001', name: 'A', price: 10.5 },
+      {
+        id: '00000000-0000-0000-0000-000000000001',
+        name: 'A',
+        price: 10.5,
+        quantity: 1,
+        unitPrice: 10.5,
+      },
     ],
   }
 
@@ -63,7 +70,7 @@ describe('createSettlement', () => {
     const created = {
       id: '00000000-0000-0000-0000-000000000099',
       name: 'Test',
-      items: body.items,
+      items: body.items.map((i) => ({ ...i })),
       users: [],
       assignments: {},
     }
@@ -105,7 +112,7 @@ describe('mock settlement lifecycle', () => {
     vi.stubEnv('VITE_SETTLEMENT_API_URL', '')
     const created = await createSettlement({
       name: 'Cafe',
-      items: [{ id: 'it1', name: 'Coffee', price: 4 }],
+      items: [{ id: 'it1', name: 'Coffee', price: 4, quantity: 1, unitPrice: 4 }],
     })
     const { participantId } = await joinSettlement(created.id, 'Sam')
     expect(participantId).toMatch(/^[0-9a-f-]{36}$/i)
@@ -120,5 +127,41 @@ describe('mock settlement lifecycle', () => {
     const { summary } = await finishSettlement(created.id)
     expect(summary.venueName).toBe('Cafe')
     expect(summary.people.some((x) => x.isOwner)).toBe(true)
+  })
+
+  it('finish allocates by claimed quantity per person', async () => {
+    vi.stubEnv('VITE_SETTLEMENT_API_URL', '')
+    const created = await createSettlement({
+      name: 'Bar',
+      items: [{ id: 'b1', name: 'Beer', price: 50, quantity: 5, unitPrice: 10 }],
+    })
+    const { participantId } = await joinSettlement(created.id, 'Sam')
+    const ownerId = created.users[0].id
+    await recordItemClaim(created.id, ownerId, 'b1', 4)
+    await recordItemClaim(created.id, participantId, 'b1', 1)
+    await markSwipeComplete(created.id, ownerId)
+    await markSwipeComplete(created.id, participantId)
+    const { summary } = await finishSettlement(created.id)
+    const owner = summary.people.find((p) => p.id === ownerId)
+    const guest = summary.people.find((p) => p.id === participantId)
+    const ownerBeer = owner?.items.find((i) => i.name.includes('Beer'))
+    const guestBeer = guest?.items.find((i) => i.name.includes('Beer'))
+    expect(ownerBeer?.price).toBe(40)
+    expect(guestBeer?.price).toBe(10)
+  })
+
+  it('finish throws when total claimed quantity exceeds line quantity', async () => {
+    vi.stubEnv('VITE_SETTLEMENT_API_URL', '')
+    const created = await createSettlement({
+      name: 'Bar',
+      items: [{ id: 'b1', name: 'Beer', price: 50, quantity: 5, unitPrice: 10 }],
+    })
+    const { participantId } = await joinSettlement(created.id, 'Sam')
+    const ownerId = created.users[0].id
+    await recordItemClaim(created.id, ownerId, 'b1', 4)
+    await recordItemClaim(created.id, participantId, 'b1', 4)
+    await markSwipeComplete(created.id, ownerId)
+    await markSwipeComplete(created.id, participantId)
+    await expect(finishSettlement(created.id)).rejects.toThrow(/exceed/)
   })
 })

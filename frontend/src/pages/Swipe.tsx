@@ -1,20 +1,22 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { X, Check } from 'lucide-react'
 import { TopAppBar } from '@/components/TopAppBar'
 import { PageLayout } from '@/components/PageLayout'
 import { SwipeCard } from '@/components/SwipeCard'
+import { QuantityPickOverlay } from '@/components/QuantityPickOverlay'
 import { CurrencyDisplay } from '@/components/CurrencyDisplay'
 import {
   getSettlementForSwipe,
   markSwipeComplete,
   recordItemClaim,
 } from '@/lib/settlementApi'
-import type { SettlementItemWire } from '@/lib/settlementTypes'
+import { normalizeSettlementItem, type SettlementItemWire } from '@/lib/settlementTypes'
 import {
   getParticipantIdFromSession,
   isSettlementOwnerSession,
 } from '@/lib/settlementSession'
+import { roundMoney } from '@/lib/utils'
 
 const TAGS = ['Popular', 'Dish', 'Extra']
 
@@ -26,6 +28,11 @@ export default function Swipe() {
   const [loading, setLoading] = useState(true)
   const [index, setIndex] = useState(0)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [pickStep, setPickStep] = useState<1 | 2>(1)
+  const [claimSubmitting, setClaimSubmitting] = useState(false)
+  /** Bumps when the last-item claim fails so the deck remounts with a centered card. */
+  const [swipeEpoch, setSwipeEpoch] = useState(0)
+  const [finishing, setFinishing] = useState(false)
 
   const participantId = settlementId ? getParticipantIdFromSession(settlementId) : null
 
@@ -45,7 +52,7 @@ export default function Swipe() {
           setLoadError('This settlement was not found or has no items.')
           setItems([])
         } else {
-          setItems(res.items)
+          setItems(res.items.map((i) => normalizeSettlementItem(i)))
           setLoadError(null)
         }
       } catch (e) {
@@ -63,30 +70,70 @@ export default function Swipe() {
     }
   }, [settlementId])
 
+  useEffect(() => {
+    setPickStep(1)
+  }, [index])
+
   const current = items[index]
   const total = items.length
 
   const tagForIndex = TAGS[index % TAGS.length]
 
-  const handleSwipe = async (direction: 'left' | 'right') => {
-    if (!settlementId || !participantId || !current) {
-      return
-    }
-    setActionError(null)
-    try {
-      await recordItemClaim(settlementId, participantId, current.id, direction === 'right')
-      if (index + 1 >= items.length) {
-        await markSwipeComplete(settlementId, participantId)
-        if (isSettlementOwnerSession(settlementId)) {
-          navigate(`/settlement/${settlementId}/status`)
-        } else {
-          navigate('/')
-        }
+  const submitClaim = useCallback(
+    async (quantityClaimed: number) => {
+      if (!settlementId || !participantId || !current) {
+        return
+      }
+      const claimedItem = current
+      const atLast = index === items.length - 1
+
+      setActionError(null)
+      setClaimSubmitting(true)
+      if (atLast) {
+        setFinishing(true)
       } else {
         setIndex((i) => i + 1)
       }
-    } catch (e) {
-      setActionError(e instanceof Error ? e.message : 'Something went wrong.')
+
+      try {
+        await recordItemClaim(settlementId, participantId, claimedItem.id, quantityClaimed)
+        setPickStep(1)
+        if (atLast) {
+          await markSwipeComplete(settlementId, participantId)
+          if (isSettlementOwnerSession(settlementId)) {
+            navigate(`/settlement/${settlementId}/status`)
+          } else {
+            navigate('/')
+          }
+        }
+      } catch (e) {
+        setActionError(e instanceof Error ? e.message : 'Something went wrong.')
+        if (atLast) {
+          setSwipeEpoch((n) => n + 1)
+        } else {
+          setIndex((i) => Math.max(0, i - 1))
+        }
+      } finally {
+        setClaimSubmitting(false)
+        setFinishing(false)
+      }
+    },
+    [settlementId, participantId, current, index, items.length, navigate],
+  )
+
+  const handleCardSwipe = (direction: 'left' | 'right') => {
+    if (claimSubmitting || !current) {
+      return
+    }
+    const lineQty = current.quantity
+    if (direction === 'left') {
+      void submitClaim(0)
+      return
+    }
+    if (lineQty <= 1) {
+      void submitClaim(1)
+    } else {
+      setPickStep(2)
     }
   }
 
@@ -125,6 +172,10 @@ export default function Swipe() {
     return null
   }
 
+  const lineQty = current.quantity
+  const unitLabel = roundMoney(current.unitPrice)
+  const nextItem = index + 1 < items.length ? items[index + 1] : null
+
   return (
     <div className="min-h-screen bg-ds-surface">
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -152,41 +203,89 @@ export default function Swipe() {
           />
         </div>
 
-        <SwipeCard key={current.id} onSwipe={handleSwipe} className="w-full">
-          <div className="aspect-[3/4] flex flex-col">
-            <div className="flex-grow bg-ds-surface-container-high relative overflow-hidden">
-              <div className="absolute inset-0 flex items-center justify-center text-ds-on-surface-variant opacity-20 font-headline text-8xl font-extrabold select-none">
-                🍽
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-transparent" />
-
-              <div className="absolute top-5 left-5 px-3 py-1.5 bg-ds-surface-container-lowest/90 backdrop-blur-md rounded-full shadow-sm">
-                <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-ds-primary">
-                  {tagForIndex}
-                </span>
-              </div>
-
-              <div className="absolute bottom-4 inset-x-0 flex justify-center pointer-events-none opacity-25">
-                <span className="font-label text-[9px] font-bold tracking-[0.3em] uppercase text-white">
-                  ← swipe to decide →
-                </span>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-4 bg-ds-surface-container-lowest dark:bg-ds-surface-container">
-              <div>
-                <h2 className="font-headline font-extrabold text-2xl text-ds-on-surface tracking-tight leading-tight">
-                  {current.name}
-                </h2>
-                <p className="font-body text-sm text-ds-on-surface-variant mt-1.5 leading-relaxed">
-                  Swipe right if this is yours, left if not.
-                </p>
-              </div>
-              <CurrencyDisplay amount={current.price} className="justify-start scale-75 origin-left" />
-            </div>
+        {finishing ? (
+          <div className="w-full flex flex-col items-center justify-center gap-3 py-20 min-h-[min(60vh,420px)]">
+            <p className="font-body text-ds-on-surface-variant">Finishing up…</p>
           </div>
-        </SwipeCard>
+        ) : pickStep === 1 ? (
+          <SwipeCard
+            topCardKey={`${current.id}-${swipeEpoch}`}
+            onSwipe={handleCardSwipe}
+            className="w-full"
+            behindChildren={
+              nextItem ? (
+                <div className="aspect-[3/4] flex flex-col">
+                  <div className="flex-grow bg-ds-surface-container-high relative overflow-hidden">
+                    <div className="absolute inset-0 flex items-center justify-center text-ds-on-surface-variant opacity-15 font-headline text-6xl font-extrabold select-none">
+                      🍽
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+                    <div className="absolute bottom-3 left-4 right-4">
+                      <p className="font-headline font-bold text-sm text-white/90 line-clamp-2 drop-shadow-md">
+                        {nextItem.name}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-ds-surface-container-lowest dark:bg-ds-surface-container">
+                    <p className="font-label text-[9px] font-bold uppercase tracking-widest text-ds-on-surface-variant/70">
+                      Up next
+                    </p>
+                  </div>
+                </div>
+              ) : undefined
+            }
+          >
+            <div className="aspect-[3/4] flex flex-col">
+              <div className="flex-grow bg-ds-surface-container-high relative overflow-hidden">
+                <div className="absolute inset-0 flex items-center justify-center text-ds-on-surface-variant opacity-20 font-headline text-8xl font-extrabold select-none">
+                  🍽
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-transparent" />
+
+                <div className="absolute top-5 left-5 flex flex-wrap gap-2">
+                  <span className="px-3 py-1.5 bg-ds-surface-container-lowest/90 backdrop-blur-md rounded-full shadow-sm text-[9px] font-bold uppercase tracking-[0.15em] text-ds-primary">
+                    {tagForIndex}
+                  </span>
+                  <span className="px-3 py-1.5 bg-ds-primary/90 backdrop-blur-md rounded-full shadow-sm text-[9px] font-bold uppercase tracking-[0.15em] text-ds-on-primary">
+                    ×{lineQty} on bill
+                  </span>
+                </div>
+
+                <div className="absolute bottom-4 inset-x-0 flex justify-center pointer-events-none opacity-25">
+                  <span className="font-label text-[9px] font-bold tracking-[0.3em] uppercase text-white">
+                    ← swipe to decide →
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-4 bg-ds-surface-container-lowest dark:bg-ds-surface-container">
+                <div>
+                  <h2 className="font-headline font-extrabold text-2xl text-ds-on-surface tracking-tight leading-tight">
+                    {current.name}
+                  </h2>
+                  <p className="font-body text-sm text-ds-on-surface-variant mt-1.5 leading-relaxed">
+                    Swipe right if this is yours, left if not
+                    {lineQty > 1 ? ' — then choose how many.' : '.'}
+                  </p>
+                  <p className="font-body text-xs text-ds-on-surface-variant/90 mt-2 tabular-nums">
+                    Unit ${unitLabel.toFixed(2)}
+                    {lineQty > 1 ? ` · line total below` : null}
+                  </p>
+                </div>
+                <CurrencyDisplay amount={current.price} className="justify-start scale-75 origin-left" />
+              </div>
+            </div>
+          </SwipeCard>
+        ) : (
+          <QuantityPickOverlay
+            maxQty={lineQty}
+            itemName={current.name}
+            isSubmitting={claimSubmitting}
+            onCancel={() => setPickStep(1)}
+            onConfirm={(q) => void submitClaim(q)}
+          />
+        )}
 
         {actionError ? (
           <p className="font-body text-sm text-red-600 dark:text-red-400 w-full" role="alert">
@@ -194,35 +293,39 @@ export default function Swipe() {
           </p>
         ) : null}
 
-        <div className="flex gap-8 items-center justify-center w-full pt-2">
-          <div className="flex flex-col items-center gap-2">
-            <button
-              type="button"
-              aria-label="Decline"
-              onClick={() => void handleSwipe('left')}
-              className="w-16 h-16 rounded-full bg-ds-surface-container-lowest shadow-md flex items-center justify-center hover:bg-ds-tertiary/10 transition-all active:scale-90 duration-150"
-            >
-              <X className="w-7 h-7 text-ds-tertiary" />
-            </button>
-            <span className="font-label text-[9px] font-bold uppercase tracking-[0.2em] text-ds-on-surface-variant opacity-40">
-              Pass
-            </span>
-          </div>
+        {!finishing && pickStep === 1 ? (
+          <div className="flex gap-8 items-center justify-center w-full pt-2">
+            <div className="flex flex-col items-center gap-2">
+              <button
+                type="button"
+                aria-label="Decline"
+                disabled={claimSubmitting}
+                onClick={() => void submitClaim(0)}
+                className="w-16 h-16 rounded-full bg-ds-surface-container-lowest shadow-md flex items-center justify-center hover:bg-ds-tertiary/10 transition-all active:scale-90 duration-150 disabled:opacity-50"
+              >
+                <X className="w-7 h-7 text-ds-tertiary" />
+              </button>
+              <span className="font-label text-[9px] font-bold uppercase tracking-[0.2em] text-ds-on-surface-variant opacity-40">
+                Pass
+              </span>
+            </div>
 
-          <div className="flex flex-col items-center gap-2">
-            <button
-              type="button"
-              aria-label="Accept"
-              onClick={() => void handleSwipe('right')}
-              className="w-16 h-16 rounded-full bg-ds-primary shadow-lg shadow-ds-primary/20 flex items-center justify-center hover:opacity-90 transition-all active:scale-90 duration-150"
-            >
-              <Check className="w-7 h-7 text-ds-on-primary" />
-            </button>
-            <span className="font-label text-[9px] font-bold uppercase tracking-[0.2em] text-ds-primary">
-              Mine
-            </span>
+            <div className="flex flex-col items-center gap-2">
+              <button
+                type="button"
+                aria-label="Accept"
+                disabled={claimSubmitting}
+                onClick={() => handleCardSwipe('right')}
+                className="w-16 h-16 rounded-full bg-ds-primary shadow-lg shadow-ds-primary/20 flex items-center justify-center hover:opacity-90 transition-all active:scale-90 duration-150 disabled:opacity-50"
+              >
+                <Check className="w-7 h-7 text-ds-on-primary" />
+              </button>
+              <span className="font-label text-[9px] font-bold uppercase tracking-[0.2em] text-ds-primary">
+                Mine
+              </span>
+            </div>
           </div>
-        </div>
+        ) : null}
       </PageLayout>
     </div>
   )

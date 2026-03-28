@@ -8,6 +8,8 @@ interface UseSwipeOptions {
 export function useSwipe({ threshold = 100, onSwipe }: UseSwipeOptions) {
   const [deltaX, setDeltaX] = useState(0)
   const [throwing, setThrowing] = useState(false)
+  /** Finger released below threshold — smooth snap to center (not a deck swap). */
+  const [snapBack, setSnapBack] = useState(false)
   const startX = useRef(0)
   const dragging = useRef(false)
   const currentDeltaX = useRef(0)
@@ -18,6 +20,12 @@ export function useSwipe({ threshold = 100, onSwipe }: UseSwipeOptions) {
       if (throwTimerRef.current !== null) clearTimeout(throwTimerRef.current)
     }
   }, [])
+
+  useEffect(() => {
+    if (!snapBack) return
+    const t = setTimeout(() => setSnapBack(false), 320)
+    return () => clearTimeout(t)
+  }, [snapBack])
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     e.currentTarget.setPointerCapture(e.pointerId)
@@ -45,14 +53,25 @@ export function useSwipe({ threshold = 100, onSwipe }: UseSwipeOptions) {
       throwTimerRef.current = setTimeout(() => {
         onSwipe?.(direction)
         setThrowing(false)
-        currentDeltaX.current = 0
-        setDeltaX(0)
+        // Keep deltaX at throw target until this instance unmounts (e.g. next item or overlay).
+        // Resetting to 0 here caused the card to snap back while async handlers still ran.
       }, 300)
     } else {
       currentDeltaX.current = 0
+      setSnapBack(true)
       setDeltaX(0)
     }
   }, [threshold, onSwipe])
 
-  return { deltaX, throwing, onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp }
+  const transformTransition = throwing || snapBack ? 'transform 0.3s ease-out' : 'none'
+
+  return {
+    deltaX,
+    throwing,
+    transformTransition,
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onPointerCancel: onPointerUp,
+  }
 }
