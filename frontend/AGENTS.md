@@ -1,0 +1,1 @@
+You don't need to cd to the frontend folder you are in the root of the project.
