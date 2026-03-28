@@ -30,6 +30,9 @@ export default function Swipe() {
   const [actionError, setActionError] = useState<string | null>(null)
   const [pickStep, setPickStep] = useState<1 | 2>(1)
   const [claimSubmitting, setClaimSubmitting] = useState(false)
+  /** Bumps when the last-item claim fails so the deck remounts with a centered card. */
+  const [swipeEpoch, setSwipeEpoch] = useState(0)
+  const [finishing, setFinishing] = useState(false)
 
   const participantId = settlementId ? getParticipantIdFromSession(settlementId) : null
 
@@ -76,40 +79,46 @@ export default function Swipe() {
 
   const tagForIndex = TAGS[index % TAGS.length]
 
-  const advanceAfterClaim = useCallback(async () => {
-    if (!settlementId || !participantId) {
-      return
-    }
-    if (index + 1 >= items.length) {
-      await markSwipeComplete(settlementId, participantId)
-      if (isSettlementOwnerSession(settlementId)) {
-        navigate(`/settlement/${settlementId}/status`)
-      } else {
-        navigate('/')
-      }
-    } else {
-      setIndex((i) => i + 1)
-    }
-  }, [settlementId, participantId, index, items.length, navigate])
-
   const submitClaim = useCallback(
     async (quantityClaimed: number) => {
       if (!settlementId || !participantId || !current) {
         return
       }
+      const claimedItem = current
+      const atLast = index === items.length - 1
+
       setActionError(null)
       setClaimSubmitting(true)
+      if (atLast) {
+        setFinishing(true)
+      } else {
+        setIndex((i) => i + 1)
+      }
+
       try {
-        await recordItemClaim(settlementId, participantId, current.id, quantityClaimed)
+        await recordItemClaim(settlementId, participantId, claimedItem.id, quantityClaimed)
         setPickStep(1)
-        await advanceAfterClaim()
+        if (atLast) {
+          await markSwipeComplete(settlementId, participantId)
+          if (isSettlementOwnerSession(settlementId)) {
+            navigate(`/settlement/${settlementId}/status`)
+          } else {
+            navigate('/')
+          }
+        }
       } catch (e) {
         setActionError(e instanceof Error ? e.message : 'Something went wrong.')
+        if (atLast) {
+          setSwipeEpoch((n) => n + 1)
+        } else {
+          setIndex((i) => Math.max(0, i - 1))
+        }
       } finally {
         setClaimSubmitting(false)
+        setFinishing(false)
       }
     },
-    [settlementId, participantId, current, advanceAfterClaim],
+    [settlementId, participantId, current, index, items.length, navigate],
   )
 
   const handleCardSwipe = (direction: 'left' | 'right') => {
@@ -165,6 +174,7 @@ export default function Swipe() {
 
   const lineQty = current.quantity
   const unitLabel = roundMoney(current.unitPrice)
+  const nextItem = index + 1 < items.length ? items[index + 1] : null
 
   return (
     <div className="min-h-screen bg-ds-surface">
@@ -193,8 +203,38 @@ export default function Swipe() {
           />
         </div>
 
-        {pickStep === 1 ? (
-          <SwipeCard key={current.id} onSwipe={handleCardSwipe} className="w-full">
+        {finishing ? (
+          <div className="w-full flex flex-col items-center justify-center gap-3 py-20 min-h-[min(60vh,420px)]">
+            <p className="font-body text-ds-on-surface-variant">Finishing up…</p>
+          </div>
+        ) : pickStep === 1 ? (
+          <SwipeCard
+            topCardKey={`${current.id}-${swipeEpoch}`}
+            onSwipe={handleCardSwipe}
+            className="w-full"
+            behindChildren={
+              nextItem ? (
+                <div className="aspect-[3/4] flex flex-col">
+                  <div className="flex-grow bg-ds-surface-container-high relative overflow-hidden">
+                    <div className="absolute inset-0 flex items-center justify-center text-ds-on-surface-variant opacity-15 font-headline text-6xl font-extrabold select-none">
+                      🍽
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+                    <div className="absolute bottom-3 left-4 right-4">
+                      <p className="font-headline font-bold text-sm text-white/90 line-clamp-2 drop-shadow-md">
+                        {nextItem.name}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-ds-surface-container-lowest dark:bg-ds-surface-container">
+                    <p className="font-label text-[9px] font-bold uppercase tracking-widest text-ds-on-surface-variant/70">
+                      Up next
+                    </p>
+                  </div>
+                </div>
+              ) : undefined
+            }
+          >
             <div className="aspect-[3/4] flex flex-col">
               <div className="flex-grow bg-ds-surface-container-high relative overflow-hidden">
                 <div className="absolute inset-0 flex items-center justify-center text-ds-on-surface-variant opacity-20 font-headline text-8xl font-extrabold select-none">
@@ -253,7 +293,7 @@ export default function Swipe() {
           </p>
         ) : null}
 
-        {pickStep === 1 ? (
+        {!finishing && pickStep === 1 ? (
           <div className="flex gap-8 items-center justify-center w-full pt-2">
             <div className="flex flex-col items-center gap-2">
               <button
