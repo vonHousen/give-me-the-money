@@ -12,7 +12,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'Give Me The Money',
+        name: 'fAIrsplit',
         short_name: 'GMTM',
         description: 'Split bills by scanning receipts',
         theme_color: '#3b82f6',

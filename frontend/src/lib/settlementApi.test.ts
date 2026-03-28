@@ -94,7 +94,14 @@ describe('createSettlement', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: 'Test',
-          items: [{ name: 'A', price: 10.5, count: 1 }],
+          items: [
+            {
+              id: '00000000-0000-0000-0000-000000000001',
+              name: 'A',
+              price: 10.5,
+              count: 1,
+            },
+          ],
           owner_name: 'Owner',
         }),
       }),

@@ -1,4 +1,4 @@
-# Give Me The Money — Frontend
+# fAIrsplit — Frontend
 
 A mobile-first PWA for splitting restaurant bills. The host scans a receipt, AI extracts the line items, and guests swipe Tinder-style to claim what they ordered. The app calculates everyone's share automatically.
 
