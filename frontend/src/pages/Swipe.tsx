@@ -7,6 +7,7 @@ import { SwipeCard } from '@/components/SwipeCard'
 import { QuantityPickOverlay } from '@/components/QuantityPickOverlay'
 import { CurrencyDisplay } from '@/components/CurrencyDisplay'
 import {
+  getSettlementApiBaseUrl,
   getSettlementForSwipe,
   markSwipeComplete,
   recordItemClaim,
@@ -19,6 +20,25 @@ import {
 import { roundMoney } from '@/lib/utils'
 
 const TAGS = ['Popular', 'Dish', 'Extra']
+
+function ItemImage({ itemId, alt, className }: { itemId: string; alt: string; className: string }) {
+  const [src, setSrc] = useState<string | null>(null)
+
+  useEffect(() => {
+    const url = `${getSettlementApiBaseUrl()}/image/${itemId}`
+    fetch(url)
+      .then((r) => r.json())
+      .then((data: { image_b64?: string }) => {
+        if (data.image_b64) {
+          setSrc(`data:image/jpeg;base64,${data.image_b64}`)
+        }
+      })
+      .catch(() => {})
+  }, [itemId])
+
+  if (!src) return null
+  return <img src={src} alt={alt} className={className} />
+}
 
 export default function Swipe() {
   const { settlementId } = useParams<{ settlementId: string }>()
@@ -216,6 +236,11 @@ export default function Swipe() {
               nextItem ? (
                 <div className="aspect-[3/4] flex flex-col">
                   <div className="flex-grow bg-ds-surface-container-high relative overflow-hidden">
+                    <ItemImage
+                      itemId={nextItem.id}
+                      alt={nextItem.name}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
                     <div className="absolute inset-0 flex items-center justify-center text-ds-on-surface-variant opacity-15 font-headline text-6xl font-extrabold select-none">
                       🍽
                     </div>
@@ -237,6 +262,11 @@ export default function Swipe() {
           >
             <div className="aspect-[3/4] flex flex-col">
               <div className="flex-grow bg-ds-surface-container-high relative overflow-hidden">
+                <ItemImage
+                  itemId={current.id}
+                  alt={current.name}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
                 <div className="absolute inset-0 flex items-center justify-center text-ds-on-surface-variant opacity-20 font-headline text-8xl font-extrabold select-none">
                   🍽
                 </div>
