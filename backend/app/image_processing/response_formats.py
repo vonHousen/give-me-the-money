@@ -38,3 +38,8 @@ class ProcessedReceipt(BaseModel):
         ge=0,
         description="The grand total value for the whole receipt.",
     )
+    nip: str | None = Field(
+        default=None,
+        pattern=r"^\d{10}$",
+        description="The NIP number just above the 'PARAGON FISKALNY' header. Must be exactly 10 digits.",
+    )

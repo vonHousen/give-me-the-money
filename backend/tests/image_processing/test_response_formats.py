@@ -29,3 +29,52 @@ def test_schema_when_rows_are_invalid_type_expect_validation_error() -> None:
     # Act / Assert
     with pytest.raises(ValidationError):
         ProcessedReceipt.model_validate(payload)
+
+
+def test_schema_when_nip_has_10_digits_expect_schema_parses() -> None:
+    # Arrange
+    payload = {
+        "rows": [{"item_name": "Milk", "item_count": 1, "total_cost": "4.20"}],
+        "total_value": "4.20",
+        "nip": "1234567890",
+    }
+
+    # Act
+    parsed = ProcessedReceipt.model_validate(payload)
+
+    # Assert
+    assert parsed.nip == "1234567890"
+
+
+@pytest.mark.parametrize(
+    "nip",
+    ["123456789", "12345678901", "12345abc90", "123-456-7890"],
+)
+def test_schema_when_nip_is_not_exactly_10_digits_expect_validation_error(
+    nip: str,
+) -> None:
+    # Arrange
+    payload = {
+        "rows": [{"item_name": "Milk", "item_count": 1, "total_cost": "4.20"}],
+        "total_value": "4.20",
+        "nip": nip,
+    }
+
+    # Act / Assert
+    with pytest.raises(ValidationError):
+        ProcessedReceipt.model_validate(payload)
+
+
+def test_schema_when_nip_is_none_expect_schema_parses() -> None:
+    # Arrange
+    payload = {
+        "rows": [{"item_name": "Milk", "item_count": 1, "total_cost": "4.20"}],
+        "total_value": "4.20",
+        "nip": None,
+    }
+
+    # Act
+    parsed = ProcessedReceipt.model_validate(payload)
+
+    # Assert
+    assert parsed.nip is None
