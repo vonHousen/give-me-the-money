@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { TopAppBar } from '@/components/TopAppBar'
 import { PageLayout } from '@/components/PageLayout'
 import { Button } from '@/components/ui/button'
 import { finishSettlement, getSettlementStatus } from '@/lib/settlementApi'
 import {
   formatParticipantLabel,
   getParticipantIdFromSession,
+  getSettlementCurrency,
   isSettlementOwnerSession,
 } from '@/lib/settlementSession'
 
@@ -54,7 +54,8 @@ export default function SettlementStatus() {
     setError(null)
     try {
       const { summary } = await finishSettlement(settlementId)
-      navigate('/summary', { state: { summary, viewerIsOwner: true } })
+      const currencyCode = getSettlementCurrency(settlementId)
+      navigate('/summary', { state: { summary, viewerIsOwner: true, currencyCode } })
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not finish settlement.')
     } finally {
@@ -72,8 +73,7 @@ export default function SettlementStatus() {
   }
 
   return (
-    <div className="min-h-screen bg-ds-surface">
-      <TopAppBar />
+    <div className="min-h-screen">
       <PageLayout className="space-y-6">
         <div className="space-y-1">
           <h2 className="font-headline font-extrabold text-2xl text-ds-on-surface">Settlement status</h2>

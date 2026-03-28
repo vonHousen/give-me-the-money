@@ -1,10 +1,10 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { TopAppBar } from '@/components/TopAppBar'
 import { PageLayout } from '@/components/PageLayout'
 import { CurrencyDisplay } from '@/components/CurrencyDisplay'
 import { Button } from '@/components/ui/button'
 import type { SettlementSummaryPayload } from '@/lib/settlementTypes'
 import { formatSummaryPersonLabel } from '@/lib/settlementSession'
+import { formatMoney } from '@/lib/utils'
 
 const STUB_PEOPLE_ROWS: SettlementSummaryPayload['people'] = [
   {
@@ -45,6 +45,7 @@ const STUB_SUMMARY: SettlementSummaryPayload = {
 export type SummaryLocationState = {
   summary?: SettlementSummaryPayload
   viewerIsOwner?: boolean
+  currencyCode?: string
 }
 
 export default function Summary() {
@@ -53,6 +54,7 @@ export default function Summary() {
   const state = location.state as SummaryLocationState | null
   const summary = state?.summary
   const viewerIsOwner = state?.viewerIsOwner ?? false
+  const currencyCode = state?.currencyCode ?? 'USD'
 
   const data = summary ?? STUB_SUMMARY
   const people = data.people
@@ -61,14 +63,13 @@ export default function Summary() {
   const labelCtx = { viewerIsOwner, viewerParticipantId: null as string | null }
 
   return (
-    <div className="min-h-screen bg-ds-surface">
-      <TopAppBar />
+    <div className="min-h-screen">
       <PageLayout className="space-y-8">
         <section className="text-center space-y-2 pt-4">
           <p className="font-label text-ds-on-surface-variant text-sm tracking-wide uppercase">
             Final Split
           </p>
-          <CurrencyDisplay amount={grandTotal} className="justify-center" />
+          <CurrencyDisplay amount={grandTotal} currencyCode={currencyCode} className="justify-center" />
           <p className="font-body text-ds-on-surface-variant text-sm">{data.venueName}</p>
         </section>
 
@@ -96,7 +97,7 @@ export default function Summary() {
                     <span className="font-headline font-bold text-ds-on-surface">{displayName}</span>
                   </div>
                   <span className="font-headline font-extrabold text-ds-primary">
-                    ${subtotal.toFixed(2)}
+                    {formatMoney(subtotal, currencyCode)}
                   </span>
                 </div>
 
@@ -105,7 +106,7 @@ export default function Summary() {
                     <div key={i} className="flex justify-between text-sm">
                       <span className="font-body text-ds-on-surface-variant">{item.name}</span>
                       <span className="font-label text-ds-on-surface-variant tabular-nums">
-                        ${item.price.toFixed(2)}
+                        {formatMoney(item.price, currencyCode)}
                       </span>
                     </div>
                   ))}

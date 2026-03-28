@@ -74,4 +74,47 @@ describe('useSwipe', () => {
     const { result: result2 } = renderHook(() => useSwipe({ threshold: 100 }))
     expect(result2.current.deltaX).toBe(0)
   })
+
+  describe('triggerSwipe', () => {
+    it('programmatically throws right and calls onSwipe', () => {
+      const onSwipe = vi.fn()
+      const { result } = renderHook(() => useSwipe({ threshold: 100, onSwipe }))
+
+      act(() => result.current.triggerSwipe('right'))
+
+      expect(result.current.throwing).toBe(true)
+      expect(result.current.deltaX).toBe(400 * 1.5)
+
+      act(() => vi.runAllTimers())
+
+      expect(onSwipe).toHaveBeenCalledWith('right')
+    })
+
+    it('programmatically throws left and calls onSwipe', () => {
+      const onSwipe = vi.fn()
+      const { result } = renderHook(() => useSwipe({ threshold: 100, onSwipe }))
+
+      act(() => result.current.triggerSwipe('left'))
+
+      expect(result.current.throwing).toBe(true)
+      expect(result.current.deltaX).toBe(-400 * 1.5)
+
+      act(() => vi.runAllTimers())
+
+      expect(onSwipe).toHaveBeenCalledWith('left')
+    })
+
+    it('ignores triggerSwipe while already throwing', () => {
+      const onSwipe = vi.fn()
+      const { result } = renderHook(() => useSwipe({ threshold: 100, onSwipe }))
+
+      act(() => result.current.triggerSwipe('right'))
+      act(() => result.current.triggerSwipe('left'))
+
+      act(() => vi.runAllTimers())
+
+      expect(onSwipe).toHaveBeenCalledTimes(1)
+      expect(onSwipe).toHaveBeenCalledWith('right')
+    })
+  })
 })

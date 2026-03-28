@@ -14,15 +14,19 @@ describe('CurrencyDisplay', () => {
     expect(screen.getByText('.05')).toBeInTheDocument()
   })
 
-  it('accepts a custom currency symbol', () => {
-    render(<CurrencyDisplay amount={10} currency="€" />)
-    expect(screen.getByText('€')).toBeInTheDocument()
+  it('derives symbol from an ISO currency code', () => {
+    render(<CurrencyDisplay amount={10} currencyCode="EUR" />)
+    expect(screen.getByText(/€/)).toBeInTheDocument()
+  })
+
+  it('defaults to USD when no currencyCode is provided', () => {
+    render(<CurrencyDisplay amount={5} />)
+    expect(screen.getByText('$')).toBeInTheDocument()
   })
 
   it('handles floating point edge cases (amount with 3 decimal places)', () => {
     render(<CurrencyDisplay amount={10.999} />)
     expect(screen.getByText('10')).toBeInTheDocument()
-    // cents should be clamped to valid range, not show "100"
     const centsEl = screen.getByText(/^\.\d{2}$/)
     expect(centsEl.textContent).not.toBe('.100')
   })

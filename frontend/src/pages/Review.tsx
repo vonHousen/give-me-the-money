@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Plus, ReceiptText } from 'lucide-react'
-import { TopAppBar } from '@/components/TopAppBar'
+import { Plus } from 'lucide-react'
 import { PageLayout } from '@/components/PageLayout'
 import { Button } from '@/components/ui/button'
 import { createSettlement } from '@/lib/settlementApi'
-import { markSettlementOwnerSession } from '@/lib/settlementSession'
-import { randomUuid, roundMoney } from '@/lib/utils'
+import { markSettlementOwnerSession, setSettlementCurrency } from '@/lib/settlementSession'
+import { formatMoney, randomUuid, roundMoney } from '@/lib/utils'
 import type { ReviewLocationState } from '@/pages/Scan'
 import type { AnalyzeItemWire } from '@/lib/receiptScanApi'
 
@@ -42,6 +41,8 @@ export default function Review() {
   const navigate = useNavigate()
   const location = useLocation()
   const receiptState = location.state as ReviewLocationState | null
+
+  const currencyCode = receiptState?.analyzeResult?.currency_code ?? 'USD'
 
   const [settlementName, setSettlementName] = useState(() =>
     receiptState?.analyzeResult?.name ?? 'Receipt',
@@ -102,7 +103,8 @@ export default function Review() {
       if (ownerUser) {
         markSettlementOwnerSession(res.id, ownerUser.id)
       }
-      navigate(`/share/${res.id}`, { state: { settlementName: settlementName.trim() || 'Receipt' } })
+      setSettlementCurrency(res.id, currencyCode)
+      navigate(`/share/${res.id}`, { state: { settlementName: settlementName.trim() || 'Receipt', currencyCode } })
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not create settlement.')
     } finally {
@@ -111,23 +113,12 @@ export default function Review() {
   }
 
   return (
-    <div className="min-h-screen bg-ds-surface">
-      <TopAppBar
-        action={
-          <button
-            type="button"
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-ds-surface-container transition-colors"
-            aria-label="Receipt"
-          >
-            <ReceiptText className="w-5 h-5 text-ds-on-surface-variant" />
-          </button>
-        }
-      />
+    <div className="min-h-screen">
       <PageLayout className="space-y-6">
         <h2 className="font-headline font-extrabold text-2xl text-ds-on-surface">Bill Overview</h2>
 
-        <div className="space-y-2">
-          <label htmlFor="settlement-name" className="font-label font-semibold text-ds-on-surface text-sm">
+        <div className="space-y-3">
+          <label htmlFor="settlement-name" className="font-label font-semibold text-ds-on-surface text-sm block">
             Settlement name
           </label>
           <input
@@ -201,7 +192,7 @@ export default function Review() {
                   />
                 </div>
                 <div className="col-span-3 text-right font-headline text-base font-bold text-ds-primary tabular-nums">
-                  ${lineSubtotal(row).toFixed(2)}
+                  {formatMoney(lineSubtotal(row), currencyCode)}
                 </div>
               </div>
             ))}
@@ -223,7 +214,7 @@ export default function Review() {
               Subtotal
             </span>
             <span className="font-headline text-lg font-bold text-ds-on-surface tabular-nums">
-              ${grandTotal.toFixed(2)}
+              {formatMoney(grandTotal, currencyCode)}
             </span>
           </div>
           <div className="h-px bg-ds-outline-variant/20 mb-6" />
@@ -232,7 +223,7 @@ export default function Review() {
               Total balance
             </span>
             <span className="font-headline text-3xl sm:text-4xl font-extrabold text-ds-primary tracking-tight tabular-nums shrink-0">
-              ${grandTotal.toFixed(2)}
+              {formatMoney(grandTotal, currencyCode)}
             </span>
           </div>
         </section>

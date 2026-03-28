@@ -23,6 +23,15 @@ export function getParticipantIdFromSession(settlementId: string): string | null
   return sessionStorage.getItem(`${PREFIX}participant:${settlementId}`)
 }
 
+export function setSettlementCurrency(settlementId: string, currencyCode: string): void {
+  sessionStorage.setItem(`${PREFIX}currency:${settlementId}`, currencyCode.toUpperCase())
+}
+
+/** ISO 4217 currency code for a settlement, defaults to USD when unknown. */
+export function getSettlementCurrency(settlementId: string): string {
+  return sessionStorage.getItem(`${PREFIX}currency:${settlementId}`) ?? 'USD'
+}
+
 export type ParticipantLabelContext = {
   viewerIsOwner: boolean
   viewerParticipantId: string | null

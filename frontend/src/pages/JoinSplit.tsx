@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Camera, Upload, QrCode } from 'lucide-react'
-import { TopAppBar } from '@/components/TopAppBar'
 import { PageLayout } from '@/components/PageLayout'
 import { Button } from '@/components/ui/button'
 import { usePreferCameraCapture } from '@/hooks/usePreferCameraCapture'
 import { decodeQrFromImageFile } from '@/lib/joinQrScan'
-import { parseSettlementIdFromJoinPayload } from '@/lib/joinSettlementUrl'
+import { parseJoinPayload } from '@/lib/joinSettlementUrl'
+import { setSettlementCurrency } from '@/lib/settlementSession'
 
 export default function JoinSplit() {
   const navigate = useNavigate()
@@ -51,13 +51,17 @@ export default function JoinSplit() {
   }
 
   const goToSettlement = (raw: string) => {
-    const id = parseSettlementIdFromJoinPayload(raw)
-    if (!id) {
+    const payload = parseJoinPayload(raw)
+    if (!payload) {
       setError('No valid settlement link or ID found in that QR code.')
       return
     }
+    if (payload.currencyCode) {
+      setSettlementCurrency(payload.settlementId, payload.currencyCode)
+    }
     setError(null)
-    navigate(`/split/${encodeURIComponent(id)}`)
+    const params = payload.currencyCode ? `?c=${encodeURIComponent(payload.currencyCode)}` : ''
+    navigate(`/split/${encodeURIComponent(payload.settlementId)}${params}`)
   }
 
   const handleScanQr = async () => {
@@ -88,7 +92,7 @@ export default function JoinSplit() {
   }
 
   return (
-    <div className="min-h-screen bg-ds-surface">
+    <div className="min-h-screen">
       {preferCameraCapture ? (
         <input
           ref={cameraInputRef}
@@ -111,7 +115,6 @@ export default function JoinSplit() {
         onChange={onFileChange}
       />
 
-      <TopAppBar />
       <PageLayout className="flex flex-col gap-6">
         <div className="space-y-1">
           <h2 className="font-headline font-extrabold text-3xl text-ds-on-surface tracking-tight leading-tight">
@@ -215,7 +218,7 @@ export default function JoinSplit() {
         </div>
 
         {/* Manual entry */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           <label htmlFor="settlement-id" className="font-label font-semibold text-ds-on-surface text-sm">
             Settlement ID or link
           </label>

@@ -203,18 +203,43 @@
 }
 
 @layer utilities {
-  @keyframes swipe-card-promote {
-    from {
-      opacity: 0.88;
-      transform: translateY(0.85rem) scale(0.96);
+  /* ── Analyzing overlay animations ── */
+
+  @keyframes analyzing-pulse {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 var(--ds-primary), 0 0 30px 5px color-mix(in oklch, var(--ds-primary) 30%, transparent);
     }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
+    50% {
+      transform: scale(1.08);
+      box-shadow: 0 0 0 12px color-mix(in oklch, var(--ds-primary) 0%, transparent), 0 0 50px 10px color-mix(in oklch, var(--ds-primary) 20%, transparent);
     }
   }
 
-  .animate-swipe-card-promote {
-    animation: swipe-card-promote 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  @keyframes analyzing-orbit {
+    from { transform: rotate(var(--orbit-start)) translateX(48px) scale(1); }
+    50%  { transform: rotate(calc(var(--orbit-start) + 180deg)) translateX(48px) scale(1.4); }
+    to   { transform: rotate(calc(var(--orbit-start) + 360deg)) translateX(48px) scale(1); }
+  }
+
+  @keyframes analyzing-orbit-outer {
+    from { transform: rotate(var(--orbit-start)) translateX(72px) scale(1); }
+    50%  { transform: rotate(calc(var(--orbit-start) + 180deg)) translateX(72px) scale(0.6); }
+    to   { transform: rotate(calc(var(--orbit-start) + 360deg)) translateX(72px) scale(1); }
+  }
+
+  @keyframes analyzing-cursor-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  @keyframes analyzing-fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes analyzing-bg-glow {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.6; }
   }
 }
