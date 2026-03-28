@@ -6,6 +6,9 @@ from app.main import app
 
 client = TestClient(app)
 
+ITEM_UUID_1 = "00000000-0000-0000-0000-000000000001"
+ITEM_UUID_2 = "00000000-0000-0000-0000-000000000002"
+
 
 @pytest.fixture(autouse=True)
 def clear_settlements() -> None:
@@ -39,7 +42,7 @@ def test_create_settlement_returns_201() -> None:
         "/settlements",
         json={
             "name": "Friday dinner",
-            "items": [{"id": 1, "name": "Pizza", "price": 10.0}],
+            "items": [{"id": ITEM_UUID_1, "name": "Pizza", "price": 10.0}],
         },
     )
 
@@ -52,49 +55,43 @@ def test_create_settlement_response_schema() -> None:
         json={
             "name": "Friday dinner",
             "items": [
-                {"id": 1, "name": "Pizza", "price": 10.0},
-                {"id": 2, "name": "Cola", "price": 2.5},
+                {"id": ITEM_UUID_1, "name": "Pizza", "price": 10.0},
+                {"id": ITEM_UUID_2, "name": "Cola", "price": 2.5},
             ],
         },
     )
     data = response.json()
 
-    assert data["id"] == 1
+    assert "id" in data
     assert data["name"] == "Friday dinner"
     assert data["items"] == [
-        {"id": 1, "name": "Pizza", "price": 10.0},
-        {"id": 2, "name": "Cola", "price": 2.5},
+        {"id": ITEM_UUID_1, "name": "Pizza", "price": 10.0},
+        {"id": ITEM_UUID_2, "name": "Cola", "price": 2.5},
     ]
-
-
-def test_create_settlement_ids_increment() -> None:
-    first = client.post("/settlements", json={"name": "A", "items": []})
-    second = client.post("/settlements", json={"name": "B", "items": []})
-
-    assert first.json()["id"] == 1
-    assert second.json()["id"] == 2
+    assert data["users"] == []
+    assert data["assignments"] == {}
 
 
 # GET /settlements/{id}
 
 
 def test_get_settlement_returns_created_settlement() -> None:
-    client.post(
+    created = client.post(
         "/settlements",
         json={
             "name": "Friday dinner",
-            "items": [{"id": 1, "name": "Pizza", "price": 10.0}],
+            "items": [{"id": ITEM_UUID_1, "name": "Pizza", "price": 10.0}],
         },
-    )
+    ).json()
 
-    response = client.get("/settlements/1")
+    response = client.get(f"/settlements/{created['id']}")
 
     assert response.status_code == 200
     assert response.json()["name"] == "Friday dinner"
 
 
 def test_get_settlement_not_found() -> None:
-    response = client.get("/settlements/999")
+    response = client.get("/settlements/00000000-0000-0000-0000-000000000000")
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Settlement not found"}
@@ -102,9 +99,9 @@ def test_get_settlement_not_found() -> None:
 
 def test_get_settlement_returns_correct_one() -> None:
     client.post("/settlements", json={"name": "First", "items": []})
-    client.post("/settlements", json={"name": "Second", "items": []})
+    second = client.post("/settlements", json={"name": "Second", "items": []}).json()
 
-    response = client.get("/settlements/2")
+    response = client.get(f"/settlements/{second['id']}")
 
     assert response.json()["name"] == "Second"
 
@@ -113,37 +110,40 @@ def test_get_settlement_returns_correct_one() -> None:
 
 
 def test_join_settlement_returns_200() -> None:
-    client.post(
+    created = client.post(
         "/settlements",
         json={
             "name": "Friday dinner",
-            "items": [{"id": 1, "name": "Pizza", "price": 10.0}],
+            "items": [{"id": ITEM_UUID_1, "name": "Pizza", "price": 10.0}],
         },
-    )
+    ).json()
 
-    response = client.put("/settlements/1/join", json={"item_ids": [1]})
+    response = client.put(f"/settlements/{created['id']}/join", json={"item_ids": [ITEM_UUID_1]})
 
     assert response.status_code == 200
 
 
 def test_join_settlement_returns_settlement() -> None:
-    client.post(
+    created = client.post(
         "/settlements",
         json={
             "name": "Friday dinner",
-            "items": [{"id": 1, "name": "Pizza", "price": 10.0}],
+            "items": [{"id": ITEM_UUID_1, "name": "Pizza", "price": 10.0}],
         },
-    )
+    ).json()
 
-    response = client.put("/settlements/1/join", json={"item_ids": [1]})
+    response = client.put(f"/settlements/{created['id']}/join", json={"item_ids": [ITEM_UUID_1]})
     data = response.json()
 
-    assert data["id"] == 1
+    assert data["id"] == created["id"]
     assert data["name"] == "Friday dinner"
 
 
 def test_join_settlement_not_found() -> None:
-    response = client.put("/settlements/999/join", json={"item_ids": [1]})
+    response = client.put(
+        "/settlements/00000000-0000-0000-0000-000000000000/join",
+        json={"item_ids": [ITEM_UUID_1]},
+    )
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Settlement not found"}
