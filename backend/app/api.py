@@ -1,10 +1,10 @@
 from uuid import UUID
 
-from backend.app.image_processing import parse_receipt
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.database.settlement_repository import SettlementRepository
+from app.image_processing import parse_receipt
 from app.models import ItemBase, Settlement
 from app.services import settle
 
@@ -56,10 +56,6 @@ def analyze(body: AnalyzeRequest) -> AnalyzeResponse:
 
     return AnalyzeResponse(
         name="Pizzeria",
-        items=[
-            ItemBase(name="Pizza Margherita", price=12.50),
-            ItemBase(name="Cola", price=2.00),
-        ],
         currency_code=processed_receipt.currency_code,
         items=items,
     )

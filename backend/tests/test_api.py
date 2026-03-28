@@ -1,10 +1,21 @@
+from decimal import Decimal
+from unittest.mock import patch
+
 import pytest
 from fastapi.testclient import TestClient
 
 from app.database.connection import write_db
+from app.image_processing.model import ProcessedReceipt, ReceiptRow
 from app.main import app
 
 client = TestClient(app)
+
+ANALYZE_REQUEST = {"image_base64": "aGVsbG8=", "mime_type": "image/jpeg"}
+
+FAKE_RECEIPT = ProcessedReceipt(
+    rows=[ReceiptRow(item_name="Pizza", item_count=1, total_cost=Decimal("12.50"))],
+    currency_code="PLN",
+)
 
 
 @pytest.fixture(autouse=True)
@@ -12,27 +23,34 @@ def reset_db() -> None:
     write_db({"settlements": []})
 
 
+@pytest.fixture(autouse=True)
+def mock_parse_receipt():
+    with patch("app.api.parse_receipt", return_value=FAKE_RECEIPT) as mock:
+        yield mock
+
+
 # POST /analyze
 
 
 def test_analyze_returns_200() -> None:
-    response = client.post("/analyze", json={"image": "aGVsbG8="})
+    response = client.post("/analyze", json=ANALYZE_REQUEST)
 
     assert response.status_code == 200
 
 
 def test_analyze_response_schema() -> None:
-    response = client.post("/analyze", json={"image": "aGVsbG8="})
+    response = client.post("/analyze", json=ANALYZE_REQUEST)
     data = response.json()
 
     assert "name" in data
+    assert "currency_code" in data
     assert isinstance(data["name"], str)
     assert "items" in data
     assert isinstance(data["items"], list)
 
 
 def test_analyze_items_have_no_id() -> None:
-    response = client.post("/analyze", json={"image": "aGVsbG8="})
+    response = client.post("/analyze", json=ANALYZE_REQUEST)
     items = response.json()["items"]
 
     assert len(items) > 0
@@ -48,7 +66,7 @@ def test_create_settlement_returns_201() -> None:
         "/settlements",
         json={
             "name": "Friday dinner",
-            "items": [{"name": "Pizza", "price": 10.0}],
+            "items": [{"name": "Pizza", "price": 10.0, "count": 1}],
         },
     )
 
@@ -61,8 +79,8 @@ def test_create_settlement_response_schema() -> None:
         json={
             "name": "Friday dinner",
             "items": [
-                {"name": "Pizza", "price": 10.0},
-                {"name": "Cola", "price": 2.5},
+                {"name": "Pizza", "price": 10.0, "count": 1},
+                {"name": "Cola", "price": 2.5, "count": 1},
             ],
         },
     )
@@ -84,7 +102,7 @@ def test_create_settlement_request_does_not_require_item_ids() -> None:
         "/settlements",
         json={
             "name": "Friday dinner",
-            "items": [{"name": "Pizza", "price": 10.0}],
+            "items": [{"name": "Pizza", "price": 10.0, "count": 1}],
         },
     )
 
@@ -99,7 +117,7 @@ def test_get_settlement_returns_created_settlement() -> None:
         "/settlements",
         json={
             "name": "Friday dinner",
-            "items": [{"name": "Pizza", "price": 10.0}],
+            "items": [{"name": "Pizza", "price": 10.0, "count": 1}],
         },
     ).json()
 
@@ -131,7 +149,7 @@ def test_get_settlement_returns_correct_one() -> None:
 def _create_settled_settlement() -> dict:
     created = client.post(
         "/settlements",
-        json={"name": "Friday dinner", "items": [{"name": "Pizza", "price": 10.0}]},
+        json={"name": "Friday dinner", "items": [{"name": "Pizza", "price": 10.0, "count": 1}]},
     ).json()
     item_id = created["items"][0]["id"]
     return client.put(
@@ -166,7 +184,7 @@ def test_finish_settlement_not_found() -> None:
 def test_finish_settlement_returns_422_when_empty() -> None:
     created = client.post(
         "/settlements",
-        json={"name": "Friday dinner", "items": [{"name": "Pizza", "price": 10.0}]},
+        json={"name": "Friday dinner", "items": [{"name": "Pizza", "price": 10.0, "count": 1}]},
     ).json()
 
     response = client.post(f"/settlements/{created['id']}/finish")
@@ -180,7 +198,7 @@ def test_finish_settlement_returns_422_when_empty() -> None:
 def test_get_settlement_status_returns_empty_list_when_no_users() -> None:
     created = client.post(
         "/settlements",
-        json={"name": "Friday dinner", "items": [{"name": "Pizza", "price": 10.0}]},
+        json={"name": "Friday dinner", "items": [{"name": "Pizza", "price": 10.0, "count": 1}]},
     ).json()
 
     response = client.get(f"/settlements/{created['id']}/status")
@@ -192,7 +210,7 @@ def test_get_settlement_status_returns_empty_list_when_no_users() -> None:
 def test_get_settlement_status_returns_joined_user_names() -> None:
     created = client.post(
         "/settlements",
-        json={"name": "Friday dinner", "items": [{"name": "Pizza", "price": 10.0}]},
+        json={"name": "Friday dinner", "items": [{"name": "Pizza", "price": 10.0, "count": 1}]},
     ).json()
     item_id = created["items"][0]["id"]
     client.put(
@@ -227,7 +245,7 @@ def test_join_settlement_returns_200() -> None:
         "/settlements",
         json={
             "name": "Friday dinner",
-            "items": [{"name": "Pizza", "price": 10.0}],
+            "items": [{"name": "Pizza", "price": 10.0, "count": 1}],
         },
     ).json()
     item_id = created["items"][0]["id"]
@@ -245,7 +263,7 @@ def test_join_settlement_adds_user() -> None:
         "/settlements",
         json={
             "name": "Friday dinner",
-            "items": [{"name": "Pizza", "price": 10.0}],
+            "items": [{"name": "Pizza", "price": 10.0, "count": 1}],
         },
     ).json()
     item_id = created["items"][0]["id"]
@@ -266,7 +284,7 @@ def test_join_settlement_records_assignment() -> None:
         "/settlements",
         json={
             "name": "Friday dinner",
-            "items": [{"name": "Pizza", "price": 10.0}],
+            "items": [{"name": "Pizza", "price": 10.0, "count": 1}],
         },
     ).json()
     item_id = created["items"][0]["id"]
@@ -286,7 +304,7 @@ def test_join_settlement_returns_settlement() -> None:
         "/settlements",
         json={
             "name": "Friday dinner",
-            "items": [{"name": "Pizza", "price": 10.0}],
+            "items": [{"name": "Pizza", "price": 10.0, "count": 1}],
         },
     ).json()
     item_id = created["items"][0]["id"]
