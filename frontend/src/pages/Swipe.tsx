@@ -143,7 +143,7 @@ export default function Swipe() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-ds-surface flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <p className="font-body text-ds-on-surface-variant">Loading…</p>
       </div>
     )
@@ -151,7 +151,7 @@ export default function Swipe() {
 
   if (loadError || !participantId) {
     return (
-      <div className="min-h-screen bg-ds-surface">
+      <div className="min-h-screen">
         <TopAppBar />
         <PageLayout className="space-y-4 pt-8">
           <p className="font-body text-ds-on-surface">
@@ -177,12 +177,7 @@ export default function Swipe() {
   const nextItem = index + 1 < items.length ? items[index + 1] : null
 
   return (
-    <div className="min-h-screen bg-ds-surface">
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-ds-primary rounded-full blur-[120px] opacity-10" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-ds-secondary-container rounded-full blur-[120px] opacity-20" />
-      </div>
-
+    <div className="min-h-screen">
       <TopAppBar />
 
       <PageLayout className="flex flex-col items-center gap-6">

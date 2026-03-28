@@ -61,7 +61,7 @@ export default function Summary() {
   const labelCtx = { viewerIsOwner, viewerParticipantId: null as string | null }
 
   return (
-    <div className="min-h-screen bg-ds-surface">
+    <div className="min-h-screen">
       <TopAppBar />
       <PageLayout className="space-y-8">
         <section className="text-center space-y-2 pt-4">

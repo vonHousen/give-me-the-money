@@ -88,7 +88,7 @@ export default function JoinSplit() {
   }
 
   return (
-    <div className="min-h-screen bg-ds-surface">
+    <div className="min-h-screen">
       {preferCameraCapture ? (
         <input
           ref={cameraInputRef}

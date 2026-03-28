@@ -72,7 +72,7 @@ export default function SettlementStatus() {
   }
 
   return (
-    <div className="min-h-screen bg-ds-surface">
+    <div className="min-h-screen">
       <TopAppBar />
       <PageLayout className="space-y-6">
         <div className="space-y-1">

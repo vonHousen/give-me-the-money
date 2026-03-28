@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
+import { AppShell } from '@/components/AppShell'
 import Home from '@/pages/Home'
 import Scan from '@/pages/Scan'
 import Review from '@/pages/Review'
@@ -11,16 +12,18 @@ import Summary from '@/pages/Summary'
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/scan" element={<Scan />} />
-      <Route path="/review" element={<Review />} />
-      <Route path="/share/:settlementId" element={<Share />} />
-      <Route path="/split/:settlementId" element={<JoinSettlement />} />
-      <Route path="/join" element={<JoinSplit />} />
-      <Route path="/swipe/:settlementId" element={<Swipe />} />
-      <Route path="/settlement/:settlementId/status" element={<SettlementStatus />} />
-      <Route path="/summary" element={<Summary />} />
-    </Routes>
+    <AppShell>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/scan" element={<Scan />} />
+        <Route path="/review" element={<Review />} />
+        <Route path="/share/:settlementId" element={<Share />} />
+        <Route path="/split/:settlementId" element={<JoinSettlement />} />
+        <Route path="/join" element={<JoinSplit />} />
+        <Route path="/swipe/:settlementId" element={<Swipe />} />
+        <Route path="/settlement/:settlementId/status" element={<SettlementStatus />} />
+        <Route path="/summary" element={<Summary />} />
+      </Routes>
+    </AppShell>
   )
 }

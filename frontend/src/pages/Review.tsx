@@ -111,7 +111,7 @@ export default function Review() {
   }
 
   return (
-    <div className="min-h-screen bg-ds-surface">
+    <div className="min-h-screen">
       <TopAppBar
         action={
           <button
