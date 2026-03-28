@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class ItemBase(BaseModel):
     name: str
     price: float
+    count: int = 1
 
 
 class Item(ItemBase):
