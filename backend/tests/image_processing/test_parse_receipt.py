@@ -81,9 +81,8 @@ def _install_fake_genai(
 ) -> None:
     fake_genai_module = _FakeGenaiModule(parsed=parsed, capture=capture, should_fail=should_fail)
     fake_genai_module.Client = fake_genai_module.build_client_class()
-    monkeypatch.setattr(
-        parse_receipt_module, "_load_genai_modules", lambda: (fake_genai_module, _FakeTypesModule)
-    )
+    monkeypatch.setattr(parse_receipt_module, "genai", fake_genai_module)
+    monkeypatch.setattr(parse_receipt_module, "types", _FakeTypesModule)
 
 
 def test_parse_receipt_when_raw_base64_input_expect_processed_receipt(

@@ -6,6 +6,8 @@ import re
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
+from google import genai
+from google.genai import types
 from pydantic import ValidationError
 
 from app.image_processing import response_formats
@@ -21,15 +23,6 @@ DEFAULT_GEMINI_MODEL = "gemini-3.1-flash"
 DEFAULT_CURRENCY_CODE = "PLN"
 
 LOGGER = logging.getLogger(__name__)
-
-
-def _load_genai_modules() -> tuple[Any, Any]:
-    try:
-        from google import genai
-        from google.genai import types
-    except Exception as exc:  # pragma: no cover
-        raise ImageProcessingConfigError("google-genai dependency is not available") from exc
-    return genai, types
 
 
 def _extract_payload_and_mime(img_b64: str, mime_type: str) -> tuple[str, str]:
@@ -142,7 +135,6 @@ def parse_receipt(img_b64: str, mime_type: str = "image/jpeg") -> ProcessedRecei
     model_name = os.getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
     image_bytes, resolved_mime = _decode_image(img_b64=img_b64, mime_type=mime_type)
 
-    genai, types = _load_genai_modules()
     client = genai.Client(api_key=api_key)
 
     try:
