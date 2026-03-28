@@ -84,6 +84,22 @@ def get_settlement(id: UUID) -> Settlement:
     return Settlement(**data)
 
 
+@router.post("/settlements/{id}/finish")
+def finish_settlement(id: UUID) -> list[dict]:
+    data = _settlement_repository.get_settlement(str(id))
+    if data is None:
+        raise HTTPException(status_code=404, detail="Settlement not found")
+    return _settlement_repository.finish_settlement(data)
+
+
+@router.get("/settlements/{id}/status")
+def get_settlement_status(id: UUID) -> dict[str, list[str]]:
+    users = _settlement_repository.get_settlement_status(str(id))
+    if users is None:
+        raise HTTPException(status_code=404, detail="Settlement not found")
+    return {"users": users}
+
+
 @router.put("/settlements/{id}/join", response_model=Settlement)
 def join_settlement(id: UUID, body: JoinRequest) -> Settlement:
     data = _settlement_repository.join_settlement(

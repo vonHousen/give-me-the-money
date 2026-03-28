@@ -121,6 +121,68 @@ Retrieve a settlement by its ID.
 
 ---
 
+## POST /settlements/{id}/finish
+
+Finish a settlement by splitting the bill based on each user's assigned items.
+
+### Path Parameters
+
+| Parameter | Type | Description   |
+|-----------|------|---------------|
+| `id`      | UUID | Settlement ID |
+
+### Response `200 OK`
+
+```json
+[
+  { "user_name": "Alice", "settlement_result": 12.50 },
+  { "user_name": "Bob",   "settlement_result":  2.00 }
+]
+```
+
+| Field                | Type   | Description                                      |
+|----------------------|--------|--------------------------------------------------|
+| `[].user_name`       | string | Name of the user                                 |
+| `[].settlement_result` | number | Total amount owed by the user (sum of their assigned item prices) |
+
+### Response `404 Not Found`
+
+```json
+{ "detail": "Settlement not found" }
+```
+
+---
+
+## GET /settlements/{id}/status
+
+Retrieve the list of users who have joined a settlement.
+
+### Path Parameters
+
+| Parameter | Type | Description   |
+|-----------|------|---------------|
+| `id`      | UUID | Settlement ID |
+
+### Response `200 OK`
+
+```json
+{
+  "users": ["Alice", "Bob"]
+}
+```
+
+| Field   | Type             | Description                              |
+|---------|------------------|------------------------------------------|
+| `users` | array of strings | Names of users who joined the settlement |
+
+### Response `404 Not Found`
+
+```json
+{ "detail": "Settlement not found" }
+```
+
+---
+
 ## PUT /settlements/{id}/join
 
 Join a settlement by selecting a list of item IDs.

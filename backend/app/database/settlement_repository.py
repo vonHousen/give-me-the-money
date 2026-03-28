@@ -11,6 +11,12 @@ class SettlementRepository:
                 return settlement
         return None
 
+    def get_settlement_status(self, settlement_id: str) -> list[str] | None:
+        settlement = self.get_settlement(settlement_id)
+        if settlement is None:
+            return None
+        return [user["name"] for user in settlement["users"]]
+
     def join_settlement(
         self, settlement_id: str, user_name: str, item_ids: list[str]
     ) -> dict | None:
@@ -23,6 +29,10 @@ class SettlementRepository:
                 write_db(db)
                 return settlement
         return None
+
+    def finish_settlement(self, settlement: dict) -> list[dict]:
+        # TODO: implement it
+        return []
 
     def create_settlement(self, name: str, items: list[dict]) -> dict:
         settlement = {
