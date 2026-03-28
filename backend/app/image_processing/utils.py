@@ -8,22 +8,13 @@ from typing import Any
 from pydantic import ValidationError
 
 from app.image_processing import response_formats
-from app.image_processing.exceptions import ImageProcessingConfigError, ImageProcessingParseError
+from app.image_processing.exceptions import ImageProcessingParseError
 from app.image_processing.model import ReceiptRow
 
 DEFAULT_GEMINI_MODEL = "gemini-3.1-flash"
 DEFAULT_CURRENCY_CODE = "PLN"
 
 LOGGER = logging.getLogger(__name__)
-
-
-def load_genai_modules() -> tuple[Any, Any]:
-    try:
-        from google import genai
-        from google.genai import types
-    except Exception as exc:  # pragma: no cover
-        raise ImageProcessingConfigError("google-genai dependency is not available") from exc
-    return genai, types
 
 
 def extract_payload_and_mime(img_b64: str, mime_type: str) -> tuple[str, str]:

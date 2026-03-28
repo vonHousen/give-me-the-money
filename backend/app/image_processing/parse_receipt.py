@@ -1,5 +1,8 @@
 import os
 
+from google import genai
+from google.genai import types
+
 from app.image_processing import response_formats, utils
 from app.image_processing.exceptions import ImageProcessingConfigError, ImageProcessingUpstreamError
 from app.image_processing.model import ProcessedReceipt
@@ -24,7 +27,6 @@ def parse_receipt(img_b64: str, mime_type: str = "image/jpeg") -> ProcessedRecei
     model_name = os.getenv("GEMINI_MODEL", utils.DEFAULT_GEMINI_MODEL)
     image_bytes, resolved_mime = utils.decode_image(img_b64=img_b64, mime_type=mime_type)
 
-    genai, types = utils.load_genai_modules()
     client = genai.Client(api_key=api_key)
 
     try:
