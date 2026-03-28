@@ -77,6 +77,8 @@ async def _fake_menu_verify_success(
                     "row_item_name": "NAPAR IMBIROWY",
                     "is_menu_match": True,
                     "matched_menu_item_name": "Napar imbirowy",
+                    "matched_menu_item_description": "Fresh ginger infusion with honey.",
+                    "matched_menu_item_image_url": "https://example.com/img/napar.jpg",
                     "matched_menu_item_price": "18.00",
                     "match_confidence": 0.93,
                 }
@@ -118,8 +120,12 @@ def test_verify_restaurant_lookup_info_when_success_expect_overwrite_and_enriche
     assert len(result.rows) == 2
     assert result.rows[0].is_menu_match is True
     assert result.rows[0].matched_menu_item_name == "Napar imbirowy"
+    assert result.rows[0].matched_menu_item_description == "Fresh ginger infusion with honey."
+    assert result.rows[0].matched_menu_item_image_url == "https://example.com/img/napar.jpg"
     assert result.rows[0].matched_menu_item_price == 18
     assert result.rows[1].is_menu_match is False
+    assert result.rows[1].matched_menu_item_description is None
+    assert result.rows[1].matched_menu_item_image_url is None
 
 
 def test_verify_restaurant_lookup_info_when_partial_match_expect_partial_overwrite(

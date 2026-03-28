@@ -40,7 +40,10 @@ def test_to_model_enrichment_when_valid_response_expect_success_status() -> None
 def test_coerce_menu_item_verification_response_when_json_string_expect_schema_validated() -> None:
     raw = (
         '{"matches":[{"row_item_name":"gimbab","is_menu_match":true,'
-        '"matched_menu_item_name":"Gimbap","matched_menu_item_price":"28.00",'
+        '"matched_menu_item_name":"Gimbap",'
+        '"matched_menu_item_description":"Rice rolls with vegetables.",'
+        '"matched_menu_item_image_url":"https://example.com/menu/gimbap.jpg",'
+        '"matched_menu_item_price":"28.00",'
         '"match_confidence":0.88}]}'
     )
 
@@ -48,6 +51,8 @@ def test_coerce_menu_item_verification_response_when_json_string_expect_schema_v
 
     assert len(parsed.matches) == 1
     assert parsed.matches[0].matched_menu_item_name == "Gimbap"
+    assert parsed.matches[0].matched_menu_item_description == "Rice rolls with vegetables."
+    assert parsed.matches[0].matched_menu_item_image_url == "https://example.com/menu/gimbap.jpg"
 
 
 def test_menu_match_map_by_row_name_when_valid_response_expect_mapping() -> None:
@@ -58,6 +63,8 @@ def test_menu_match_map_by_row_name_when_valid_response_expect_mapping() -> None
                     "row_item_name": "gimbab",
                     "is_menu_match": True,
                     "matched_menu_item_name": "Gimbap",
+                    "matched_menu_item_description": "Rice rolls with vegetables.",
+                    "matched_menu_item_image_url": "https://example.com/menu/gimbap.jpg",
                     "matched_menu_item_price": "28.00",
                     "match_confidence": 0.88,
                 }

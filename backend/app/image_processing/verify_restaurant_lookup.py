@@ -75,6 +75,12 @@ async def verify_restaurant_lookup_info(
                     matched_menu_item_name=(
                         row_match.matched_menu_item_name if row_match else None
                     ),
+                    matched_menu_item_description=(
+                        row_match.matched_menu_item_description if row_match else None
+                    ),
+                    matched_menu_item_image_url=(
+                        row_match.matched_menu_item_image_url if row_match else None
+                    ),
                     matched_menu_item_price=(
                         row_match.matched_menu_item_price if row_match else None
                     ),
@@ -97,6 +103,8 @@ def _build_unmatched_rows(processed_receipt: ProcessedReceipt) -> list[EnrichedR
             total_cost=row.total_cost,
             is_menu_match=False,
             matched_menu_item_name=None,
+            matched_menu_item_description=None,
+            matched_menu_item_image_url=None,
             matched_menu_item_price=None,
             match_confidence=None,
         )

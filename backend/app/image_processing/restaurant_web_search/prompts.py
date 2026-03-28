@@ -58,6 +58,8 @@ def build_menu_item_verification_prompt(
         - Return one match object for each receipt row item name.
         - Matching should be fuzzy semantic by item meaning.
         - If there is no match, set is_menu_match to false and matched fields to null.
+        - matched_menu_item_description should be a short factual menu description when available.
+        - matched_menu_item_image_url should be a direct absolute URL when available.
         - match_confidence should be between 0 and 1.
         - Do not use sources other than provided menu_source_urls.
         - Do not invent missing facts.

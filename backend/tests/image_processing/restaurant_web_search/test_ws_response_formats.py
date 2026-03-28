@@ -47,6 +47,8 @@ def test_menu_item_verification_response_when_valid_payload_expect_parsed() -> N
                 "row_item_name": "gimbab",
                 "is_menu_match": True,
                 "matched_menu_item_name": "Gimbap",
+                "matched_menu_item_description": "Rice rolls with vegetables.",
+                "matched_menu_item_image_url": "https://example.com/menu/gimbap.jpg",
                 "matched_menu_item_price": "28.00",
                 "match_confidence": 0.88,
             }
@@ -57,3 +59,5 @@ def test_menu_item_verification_response_when_valid_payload_expect_parsed() -> N
 
     assert len(parsed.matches) == 1
     assert parsed.matches[0].is_menu_match is True
+    assert parsed.matches[0].matched_menu_item_description == "Rice rolls with vegetables."
+    assert parsed.matches[0].matched_menu_item_image_url == "https://example.com/menu/gimbap.jpg"

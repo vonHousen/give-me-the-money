@@ -116,6 +116,8 @@ def main(
         enriched_table.add_column("total_cost", justify="right")
         enriched_table.add_column("is_menu_match", justify="center")
         enriched_table.add_column("matched_menu_item")
+        enriched_table.add_column("matched_description")
+        enriched_table.add_column("matched_image_url")
         enriched_table.add_column("matched_price", justify="right")
         enriched_table.add_column("match_confidence", justify="right")
 
@@ -127,6 +129,8 @@ def main(
                 _format_money(row.total_cost),
                 "yes" if row.is_menu_match else "no",
                 row.matched_menu_item_name or "-",
+                row.matched_menu_item_description or "-",
+                row.matched_menu_item_image_url or "-",
                 _format_money(row.matched_menu_item_price)
                 if row.matched_menu_item_price is not None
                 else "-",

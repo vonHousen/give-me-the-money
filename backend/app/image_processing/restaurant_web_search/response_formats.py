@@ -37,6 +37,8 @@ class ReceiptRowMenuMatch(BaseModel):
     row_item_name: str = Field(min_length=1)
     is_menu_match: bool
     matched_menu_item_name: str | None = None
+    matched_menu_item_description: str | None = None
+    matched_menu_item_image_url: str | None = None
     matched_menu_item_price: Decimal | None = Field(default=None, ge=0)
     match_confidence: float | None = Field(default=None, ge=0, le=1)
 
@@ -50,6 +52,8 @@ class MenuItemVerificationResponse(BaseModel):
               "row_item_name": "string",
               "is_menu_match": true,
               "matched_menu_item_name": "string | null",
+              "matched_menu_item_description": "string | null",
+              "matched_menu_item_image_url": "https://... | null",
               "matched_menu_item_price": "12.50 | null",
               "match_confidence": 0.0
             }

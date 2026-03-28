@@ -105,6 +105,8 @@ def test_enriched_processed_receipt_when_valid_payload_expect_calculated_total()
                     "total_cost": "12.00",
                     "is_menu_match": True,
                     "matched_menu_item_name": "Soup of the day",
+                    "matched_menu_item_description": "Classic tomato soup with basil.",
+                    "matched_menu_item_image_url": "https://example.com/soup.jpg",
                     "matched_menu_item_price": "12.00",
                     "match_confidence": 0.92,
                 },
@@ -114,6 +116,8 @@ def test_enriched_processed_receipt_when_valid_payload_expect_calculated_total()
                     "total_cost": "5.00",
                     "is_menu_match": False,
                     "matched_menu_item_name": None,
+                    "matched_menu_item_description": None,
+                    "matched_menu_item_image_url": None,
                     "matched_menu_item_price": None,
                     "match_confidence": None,
                 },
@@ -127,6 +131,8 @@ def test_enriched_processed_receipt_when_valid_payload_expect_calculated_total()
     assert enriched.calculated_total == Decimal("17.00")
     assert len(enriched.rows) == 2
     assert enriched.rows[0].is_menu_match is True
+    assert enriched.rows[0].matched_menu_item_description == "Classic tomato soup with basil."
+    assert enriched.rows[0].matched_menu_item_image_url == "https://example.com/soup.jpg"
 
 
 def test_enriched_receipt_row_when_confidence_out_of_range_expect_validation_error() -> None:
@@ -138,6 +144,8 @@ def test_enriched_receipt_row_when_confidence_out_of_range_expect_validation_err
                 "total_cost": "12.00",
                 "is_menu_match": True,
                 "matched_menu_item_name": "Soup",
+                "matched_menu_item_description": "A",
+                "matched_menu_item_image_url": "https://example.com/soup.jpg",
                 "matched_menu_item_price": "12.00",
                 "match_confidence": 1.2,
             }

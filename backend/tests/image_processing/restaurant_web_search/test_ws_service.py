@@ -28,6 +28,8 @@ async def _fake_menu_verify_success(*_args, **_kwargs):
                 "row_item_name": "Soup",
                 "is_menu_match": True,
                 "matched_menu_item_name": "Tomato Soup",
+                "matched_menu_item_description": "Tomato soup with croutons.",
+                "matched_menu_item_image_url": "https://example.com/menu/tomato-soup.jpg",
                 "matched_menu_item_price": "12.00",
                 "match_confidence": 0.91,
             }
@@ -105,6 +107,10 @@ def test_verify_menu_items_from_sources_async_when_success_expect_matches(
 
     assert len(result.matches) == 1
     assert result.matches[0].is_menu_match is True
+    assert result.matches[0].matched_menu_item_description == "Tomato soup with croutons."
+    assert (
+        result.matches[0].matched_menu_item_image_url == "https://example.com/menu/tomato-soup.jpg"
+    )
 
 
 def test_verify_menu_items_from_sources_async_when_missing_sources_expect_empty() -> None:

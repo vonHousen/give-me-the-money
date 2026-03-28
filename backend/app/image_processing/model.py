@@ -50,6 +50,8 @@ class EnrichedRestaurantInfo(RestaurantInfo):
 class EnrichedReceiptRow(ReceiptRow):
     is_menu_match: bool = False
     matched_menu_item_name: str | None = None
+    matched_menu_item_description: str | None = None
+    matched_menu_item_image_url: str | None = None
     matched_menu_item_price: Decimal | None = Field(default=None, ge=0)
     match_confidence: float | None = Field(default=None, ge=0, le=1)
 
