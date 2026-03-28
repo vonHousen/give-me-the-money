@@ -1,52 +1,85 @@
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { TopAppBar } from '@/components/TopAppBar'
 import { PageLayout } from '@/components/PageLayout'
 import { CurrencyDisplay } from '@/components/CurrencyDisplay'
 import { Button } from '@/components/ui/button'
+import type { SettlementSummaryPayload } from '@/lib/settlementTypes'
+import { formatSummaryPersonLabel } from '@/lib/settlementSession'
 
-const STUB_PEOPLE = [
+const STUB_PEOPLE_ROWS: SettlementSummaryPayload['people'] = [
   {
-    id: 1,
+    id: '1',
     name: 'Alex',
-    items: [{ name: 'Garden Harvest Bowl', price: 18.5 }, { name: 'Sparkling Water', price: 2.5 }],
+    isOwner: false,
+    items: [
+      { name: 'Garden Harvest Bowl', price: 18.5 },
+      { name: 'Sparkling Water', price: 2.5 },
+    ],
   },
   {
-    id: 2,
+    id: '2',
     name: 'Sam',
-    items: [{ name: 'Truffle Fries', price: 9.0 }, { name: 'Lemon Tart', price: 8.0 }],
+    isOwner: false,
+    items: [
+      { name: 'Truffle Fries', price: 9.0 },
+      { name: 'Lemon Tart', price: 8.0 },
+    ],
   },
   {
-    id: 3,
+    id: '3',
     name: 'Jordan',
-    items: [{ name: 'Sparkling Water ×2', price: 5.0 }, { name: 'Service Charge', price: 4.3 }],
+    isOwner: false,
+    items: [
+      { name: 'Sparkling Water ×2', price: 5.0 },
+      { name: 'Service Charge', price: 4.3 },
+    ],
   },
 ]
 
-const GRAND_TOTAL = STUB_PEOPLE.flatMap((p) => p.items).reduce((s, i) => s + i.price, 0)
+const STUB_SUMMARY: SettlementSummaryPayload = {
+  venueName: 'Le Bistro Central · Today',
+  people: STUB_PEOPLE_ROWS,
+  grandTotal: STUB_PEOPLE_ROWS.flatMap((p) => p.items).reduce((s, i) => s + i.price, 0),
+}
+
+export type SummaryLocationState = {
+  summary?: SettlementSummaryPayload
+  viewerIsOwner?: boolean
+}
 
 export default function Summary() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const state = location.state as SummaryLocationState | null
+  const summary = state?.summary
+  const viewerIsOwner = state?.viewerIsOwner ?? false
+
+  const data = summary ?? STUB_SUMMARY
+  const people = data.people
+  const grandTotal = data.grandTotal
+
+  const labelCtx = { viewerIsOwner, viewerParticipantId: null as string | null }
 
   return (
     <div className="min-h-screen bg-ds-surface">
       <TopAppBar />
       <PageLayout className="space-y-8">
-        {/* Hero total */}
         <section className="text-center space-y-2 pt-4">
           <p className="font-label text-ds-on-surface-variant text-sm tracking-wide uppercase">
             Final Split
           </p>
-          <CurrencyDisplay amount={GRAND_TOTAL} className="justify-center" />
-          <p className="font-body text-ds-on-surface-variant text-sm">
-            Le Bistro Central · Today
-          </p>
+          <CurrencyDisplay amount={grandTotal} className="justify-center" />
+          <p className="font-body text-ds-on-surface-variant text-sm">{data.venueName}</p>
         </section>
 
-        {/* Person cards */}
         <section className="space-y-4">
-          {STUB_PEOPLE.map((person) => {
+          {people.map((person) => {
             const subtotal = person.items.reduce((s, i) => s + i.price, 0)
-            const initials = person.name[0].toUpperCase()
+            const displayName = formatSummaryPersonLabel(person, labelCtx)
+            const initials =
+              displayName === 'Me'
+                ? 'M'
+                : (displayName[0]?.toUpperCase() ?? '?')
 
             return (
               <div
@@ -60,9 +93,7 @@ export default function Summary() {
                         {initials}
                       </span>
                     </div>
-                    <span className="font-headline font-bold text-ds-on-surface">
-                      {person.name}
-                    </span>
+                    <span className="font-headline font-bold text-ds-on-surface">{displayName}</span>
                   </div>
                   <span className="font-headline font-extrabold text-ds-primary">
                     ${subtotal.toFixed(2)}

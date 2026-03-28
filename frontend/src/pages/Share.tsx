@@ -33,7 +33,12 @@ export default function Share() {
           <SettlementQr settlementId={settlementId} />
         </div>
 
-        <Button variant="pill" className="w-full" type="button" onClick={() => navigate('/swipe')}>
+        <Button
+          variant="pill"
+          className="w-full"
+          type="button"
+          onClick={() => navigate(`/swipe/${settlementId}`)}
+        >
           Continue to swipe
         </Button>
       </PageLayout>

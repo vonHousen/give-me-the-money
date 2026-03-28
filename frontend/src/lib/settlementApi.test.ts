@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createSettlement, getSettlementApiBaseUrl } from './settlementApi'
+import {
+  createSettlement,
+  finishSettlement,
+  getSettlementApiBaseUrl,
+  getSettlementStatus,
+  joinSettlement,
+  markSwipeComplete,
+  resetSettlementMockStore,
+} from './settlementApi'
 
 describe('getSettlementApiBaseUrl', () => {
   afterEach(() => {
@@ -21,6 +29,7 @@ describe('createSettlement', () => {
   afterEach(() => {
     vi.unstubAllEnvs()
     vi.restoreAllMocks()
+    resetSettlementMockStore()
   })
 
   const body = {
@@ -45,6 +54,8 @@ describe('createSettlement', () => {
     expect(res.id).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     )
+    expect(res.users).toHaveLength(1)
+    expect(res.users[0].name).toBe('Test')
   })
 
   it('POSTs JSON to {base}/settlements when URL is set', async () => {
@@ -81,5 +92,33 @@ describe('createSettlement', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('bad', { status: 500 }))
 
     await expect(createSettlement(body)).rejects.toThrow(/500/)
+  })
+})
+
+describe('mock settlement lifecycle', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    resetSettlementMockStore()
+  })
+
+  it('join adds status participant and finish returns summary', async () => {
+    vi.stubEnv('VITE_SETTLEMENT_API_URL', '')
+    const created = await createSettlement({
+      name: 'Cafe',
+      items: [{ id: 'it1', name: 'Coffee', price: 4 }],
+    })
+    const { participantId } = await joinSettlement(created.id, 'Sam')
+    expect(participantId).toMatch(/^[0-9a-f-]{36}$/i)
+
+    const status = await getSettlementStatus(created.id)
+    expect(status.participants).toHaveLength(2)
+    expect(status.participants.some((x) => x.name === 'Sam' && !x.isOwner)).toBe(true)
+
+    await markSwipeComplete(created.id, created.users[0].id)
+    await markSwipeComplete(created.id, participantId)
+
+    const { summary } = await finishSettlement(created.id)
+    expect(summary.venueName).toBe('Cafe')
+    expect(summary.people.some((x) => x.isOwner)).toBe(true)
   })
 })
