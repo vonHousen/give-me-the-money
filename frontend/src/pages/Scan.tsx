@@ -7,6 +7,7 @@ import { usePreferCameraCapture } from '@/hooks/usePreferCameraCapture'
 import { blobToBase64Payload } from '@/lib/receiptScanEncoding'
 import { analyzeReceipt } from '@/lib/receiptScanApi'
 import type { AnalyzeResponse } from '@/lib/receiptScanApi'
+import { AnalyzingOverlay } from '@/components/AnalyzingOverlay'
 
 export type ReviewLocationState = {
   analyzeResult?: AnalyzeResponse
@@ -70,6 +71,7 @@ export default function Scan() {
 
   return (
     <div className="min-h-screen">
+      <AnalyzingOverlay visible={loading} />
       {preferCameraCapture ? (
         <input
           ref={cameraInputRef}
