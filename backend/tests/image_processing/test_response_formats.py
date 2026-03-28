@@ -11,6 +11,11 @@ def test_schema_when_valid_raw_payload_expect_schema_parses() -> None:
     payload = {
         "rows": [{"item_name": "Milk", "item_count": 2, "total_cost": "8.40"}],
         "total_value": "8.40",
+        "restaurant_info": {
+            "nip": None,
+            "restaurant_address": None,
+            "restaurant_name": None,
+        },
     }
 
     # Act
@@ -36,14 +41,18 @@ def test_schema_when_nip_has_10_digits_expect_schema_parses() -> None:
     payload = {
         "rows": [{"item_name": "Milk", "item_count": 1, "total_cost": "4.20"}],
         "total_value": "4.20",
-        "nip": "1234567890",
+        "restaurant_info": {
+            "nip": "1234567890",
+            "restaurant_address": None,
+            "restaurant_name": None,
+        },
     }
 
     # Act
     parsed = ProcessedReceipt.model_validate(payload)
 
     # Assert
-    assert parsed.nip == "1234567890"
+    assert parsed.restaurant_info.nip == "1234567890"
 
 
 @pytest.mark.parametrize(
@@ -57,7 +66,11 @@ def test_schema_when_nip_is_not_exactly_10_digits_expect_validation_error(
     payload = {
         "rows": [{"item_name": "Milk", "item_count": 1, "total_cost": "4.20"}],
         "total_value": "4.20",
-        "nip": nip,
+        "restaurant_info": {
+            "nip": nip,
+            "restaurant_address": None,
+            "restaurant_name": None,
+        },
     }
 
     # Act / Assert
@@ -70,11 +83,15 @@ def test_schema_when_nip_is_none_expect_schema_parses() -> None:
     payload = {
         "rows": [{"item_name": "Milk", "item_count": 1, "total_cost": "4.20"}],
         "total_value": "4.20",
-        "nip": None,
+        "restaurant_info": {
+            "nip": None,
+            "restaurant_address": None,
+            "restaurant_name": None,
+        },
     }
 
     # Act
     parsed = ProcessedReceipt.model_validate(payload)
 
     # Assert
-    assert parsed.nip is None
+    assert parsed.restaurant_info.nip is None

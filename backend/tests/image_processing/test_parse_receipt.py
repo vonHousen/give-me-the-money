@@ -1,3 +1,4 @@
+import ast
 import base64
 import importlib
 from decimal import Decimal
@@ -98,6 +99,11 @@ def test_parse_receipt_when_raw_base64_input_expect_processed_receipt(
         {
             "rows": [{"item_name": "Tomato", "item_count": 2, "total_cost": "12.50"}],
             "total_value": "12.50",
+            "restaurant_info": {
+                "nip": None,
+                "restaurant_address": None,
+                "restaurant_name": None,
+            },
         },
     )
     _install_fake_genai(monkeypatch, parsed=parsed, capture=capture)
@@ -126,6 +132,11 @@ def test_parse_receipt_when_data_url_input_expect_mime_type_extracted(
         {
             "rows": [{"item_name": "Coffee", "item_count": 1, "total_cost": "9.99"}],
             "total_value": "9.99",
+            "restaurant_info": {
+                "nip": None,
+                "restaurant_address": None,
+                "restaurant_name": None,
+            },
         },
     )
     _install_fake_genai(monkeypatch, parsed=parsed, capture=capture)
@@ -156,7 +167,17 @@ def test_parse_receipt_when_gemini_fails_expect_upstream_error(
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
     payload = base64.b64encode(b"fake image bytes").decode("utf-8")
     capture: dict[str, Any] = {}
-    parsed = ProcessedReceipt.model_validate({"rows": [], "total_value": "0.00"})
+    parsed = ProcessedReceipt.model_validate(
+        {
+            "rows": [],
+            "total_value": "0.00",
+            "restaurant_info": {
+                "nip": None,
+                "restaurant_address": None,
+                "restaurant_name": None,
+            },
+        },
+    )
     _install_fake_genai(monkeypatch, parsed=parsed, capture=capture, should_fail=True)
 
     # Act / Assert
@@ -196,7 +217,11 @@ def test_parse_receipt_when_nip_is_non_empty_expect_nip_logged(
         {
             "rows": [{"item_name": "Bread", "item_count": 1, "total_cost": "5.00"}],
             "total_value": "5.00",
-            "nip": "1234567890",
+            "restaurant_info": {
+                "nip": "1234567890",
+                "restaurant_address": None,
+                "restaurant_name": None,
+            },
         },
     )
     _install_fake_genai(monkeypatch, parsed=parsed, capture=capture)
@@ -231,8 +256,11 @@ def test_parse_receipt_when_restaurant_attributes_present_expect_logged(
         {
             "rows": [{"item_name": "Soup", "item_count": 1, "total_cost": "12.00"}],
             "total_value": "12.00",
-            "restaurant_name": "Bistro XYZ",
-            "restaurant_address": "Main Street 10, Warsaw",
+            "restaurant_info": {
+                "nip": None,
+                "restaurant_name": "Bistro XYZ",
+                "restaurant_address": "Main Street 10, Warsaw",
+            },
         },
     )
     _install_fake_genai(monkeypatch, parsed=parsed, capture=capture)
@@ -257,4 +285,6 @@ def test_parse_receipt_when_restaurant_attributes_present_expect_logged(
         "restaurant_name": "Bistro XYZ",
         "restaurant_address": "Main Street 10, Warsaw",
     }
-    assert log_calls[0] == f"Receipt restaurant attributes extracted: {extracted}"
+    prefix = "Receipt restaurant attributes extracted: "
+    assert log_calls[0].startswith(prefix)
+    assert ast.literal_eval(log_calls[0][len(prefix) :]) == extracted

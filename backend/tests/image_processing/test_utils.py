@@ -10,6 +10,11 @@ def test_to_model_processed_receipt_when_valid_raw_receipt_expect_domain_model()
         {
             "rows": [{"item_name": "Orange", "item_count": 3, "total_cost": "10.50"}],
             "total_value": "10.50",
+            "restaurant_info": {
+                "nip": None,
+                "restaurant_address": None,
+                "restaurant_name": None,
+            },
         },
     )
 
@@ -30,6 +35,11 @@ def test_to_model_processed_receipt_when_totals_match_expect_info_log(caplog) ->
         {
             "rows": [{"item_name": "Orange", "item_count": 3, "total_cost": "10.50"}],
             "total_value": "10.50",
+            "restaurant_info": {
+                "nip": None,
+                "restaurant_address": None,
+                "restaurant_name": None,
+            },
         },
     )
     caplog.set_level(logging.INFO)
@@ -47,6 +57,11 @@ def test_to_model_processed_receipt_when_totals_mismatch_expect_warning_log(capl
         {
             "rows": [{"item_name": "Orange", "item_count": 3, "total_cost": "10.50"}],
             "total_value": "11.50",
+            "restaurant_info": {
+                "nip": None,
+                "restaurant_address": None,
+                "restaurant_name": None,
+            },
         },
     )
     caplog.set_level(logging.WARNING)

@@ -41,16 +41,8 @@ def decode_image(img_b64: str, mime_type: str) -> tuple[bytes, str]:
 def log_extracted_restaurant_attributes(
     parsed_receipt: response_formats.ProcessedReceipt,
 ) -> None:
-    optional_attributes = {
-        "restaurant_name": parsed_receipt.restaurant_name,
-        "restaurant_address": parsed_receipt.restaurant_address,
-        "nip": parsed_receipt.nip,
-    }
-    extracted = {
-        key: value for key, value in optional_attributes.items() if value and value.strip()
-    }
-    if extracted:
-        LOGGER.info(f"Receipt restaurant attributes extracted: {extracted}")
+    if extracted := parsed_receipt.restaurant_info.serialize_only_extracted():
+        LOGGER.info(f"Restaurant's info: {extracted}")
 
 
 def coerce_raw_response(parsed_response: Any) -> response_formats.ProcessedReceipt:
