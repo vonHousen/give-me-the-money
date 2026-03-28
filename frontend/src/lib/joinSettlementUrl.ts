@@ -19,3 +19,35 @@ export function buildJoinSettlementUrl(settlementId: string): string {
   const base = getPublicAppUrl()
   return `${base}/split/${settlementId}`
 }
+
+/**
+ * Parses a settlement id from manual entry, a pasted join URL, or QR text.
+ * URLs may use any origin (e.g. production or localhost); path must contain `/split/:id`.
+ */
+export function parseSettlementIdFromJoinPayload(raw: string): string | null {
+  const t = raw.trim()
+  if (!t) return null
+
+  if (/^[a-zA-Z0-9_-]+$/.test(t)) {
+    return t
+  }
+
+  let url: URL
+  try {
+    url = new URL(t)
+  } catch {
+    try {
+      url = new URL(t, 'https://placeholder.invalid')
+    } catch {
+      return null
+    }
+  }
+
+  const m = url.pathname.match(/\/split\/([^/?#]+)/)
+  if (!m) return null
+  try {
+    return decodeURIComponent(m[1])
+  } catch {
+    return null
+  }
+}
