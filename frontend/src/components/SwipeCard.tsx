@@ -22,7 +22,7 @@ export function SwipeCard({ onSwipe, children, className }: SwipeCardProps) {
 
       {/* Active card */}
       <div
-        className="relative w-full bg-ds-surface-container-lowest rounded-xl shadow-lg overflow-hidden cursor-grab active:cursor-grabbing select-none"
+        className="relative w-full touch-pan-y bg-ds-surface-container-lowest rounded-xl shadow-lg overflow-hidden cursor-grab active:cursor-grabbing select-none"
         style={{
           transform: `translateX(${deltaX}px) rotate(${rotation}deg)`,
           transition: (throwing || deltaX === 0) ? 'transform 0.3s ease-out' : 'none',
