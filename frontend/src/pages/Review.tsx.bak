@@ -1,0 +1,210 @@
+import { useMemo, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { Plus, ReceiptText } from 'lucide-react'
+import { TopAppBar } from '@/components/TopAppBar'
+import { PageLayout } from '@/components/PageLayout'
+import { Button } from '@/components/ui/button'
+import { createSettlement } from '@/lib/settlementApi'
+import { roundMoney } from '@/lib/utils'
+import type { ReviewLocationState } from '@/pages/Scan'
+
+export type ReviewLine = {
+  id: string
+  name: string
+  unitPrice: number
+  quantity: number
+}
+
+const SEED_ROWS: ReviewLine[] = [
+  { id: '00000000-0000-0000-0000-000000000001', name: 'Garden Harvest Bowl', unitPrice: 18.5, quantity: 1 },
+  { id: '00000000-0000-0000-0000-000000000002', name: 'Truffle Fries', unitPrice: 9.0, quantity: 1 },
+  { id: '00000000-0000-0000-0000-000000000003', name: 'Lemon Tart', unitPrice: 8.0, quantity: 1 },
+  { id: '00000000-0000-0000-0000-000000000004', name: 'Sparkling Water', unitPrice: 2.5, quantity: 3 },
+  { id: '00000000-0000-0000-0000-000000000005', name: 'Service Charge (10%)', unitPrice: 4.3, quantity: 1 },
+]
+
+function lineSubtotal(row: ReviewLine): number {
+  return roundMoney(row.unitPrice * row.quantity)
+}
+
+export default function Review() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const receiptState = location.state as ReviewLocationState | null
+
+  const [settlementName, setSettlementName] = useState(() =>
+    receiptState?.receiptScan?.receipt_id
+      ? `Receipt ${receiptState.receiptScan.receipt_id.slice(0, 8)}…`
+      : 'Receipt',
+  )
+  const [rows, setRows] = useState<ReviewLine[]>(() => SEED_ROWS.map((r) => ({ ...r })))
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const grandTotal = useMemo(
+    () => roundMoney(rows.reduce((sum, row) => sum + lineSubtotal(row), 0)),
+    [rows],
+  )
+
+  const updateRow = (id: string, patch: Partial<Pick<ReviewLine, 'name' | 'unitPrice' | 'quantity'>>) => {
+    setRows((prev) =>
+      prev.map((row) => (row.id === id ? { ...row, ...patch } : row)),
+    )
+  }
+
+  const addRow = () => {
+    setRows((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        name: '',
+        unitPrice: 0,
+        quantity: 1,
+      },
+    ])
+  }
+
+  const handleShare = async () => {
+    const validRows = rows.filter((r) => r.name.trim() !== '' && lineSubtotal(r) > 0)
+    if (validRows.length === 0) {
+      setError('Add at least one line with a name and a positive total.')
+      return
+    }
+    setError(null)
+    setLoading(true)
+    try {
+      const res = await createSettlement({
+        name: settlementName.trim() || 'Receipt',
+        items: validRows.map((r) => ({
+          id: r.id,
+          name: r.name.trim(),
+          price: lineSubtotal(r),
+        })),
+      })
+      navigate(`/share/${res.id}`)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not create settlement.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-ds-surface">
+      <TopAppBar
+        action={
+          <button
+            type="button"
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-ds-surface-container transition-colors"
+            aria-label="Receipt"
+          >
+            <ReceiptText className="w-5 h-5 text-ds-on-surface-variant" />
+          </button>
+        }
+      />
+      <PageLayout className="space-y-6">
+        <h2 className="font-headline font-extrabold text-2xl text-ds-on-surface">Bill Overview</h2>
+
+        <div className="space-y-2">
+          <label htmlFor="settlement-name" className="font-label font-semibold text-ds-on-surface text-sm">
+            Settlement name
+          </label>
+          <input
+            id="settlement-name"
+            type="text"
+            value={settlementName}
+            onChange={(e) => setSettlementName(e.target.value)}
+            className="w-full rounded-xl border border-ds-outline-variant bg-ds-surface-container-lowest dark:bg-ds-surface-container px-4 py-3 font-body text-ds-on-surface text-sm outline-none focus:border-ds-primary"
+            autoComplete="off"
+          />
+        </div>
+
+        <div className="overflow-x-auto -mx-1">
+          <table className="w-full min-w-[320px] text-sm border-separate border-spacing-0">
+            <thead>
+              <tr className="font-label font-semibold text-ds-on-surface-variant text-left">
+                <th className="pb-2 pr-2">Item</th>
+                <th className="pb-2 pr-2 w-24">Price</th>
+                <th className="pb-2 pr-2 w-20">Qty</th>
+                <th className="pb-2 text-right w-24">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id} className="align-top">
+                  <td className="py-1.5 pr-2">
+                    <input
+                      aria-label={`Item name ${row.id}`}
+                      value={row.name}
+                      onChange={(e) => updateRow(row.id, { name: e.target.value })}
+                      placeholder="Description"
+                      className="w-full min-w-[8rem] rounded-lg border border-transparent bg-ds-surface-container-lowest dark:bg-ds-surface-container px-2 py-1.5 font-body text-ds-on-surface outline-none focus:border-ds-primary"
+                    />
+                  </td>
+                  <td className="py-1.5 pr-2">
+                    <input
+                      aria-label={`Unit price ${row.id}`}
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      min="0"
+                      value={Number.isFinite(row.unitPrice) ? row.unitPrice : ''}
+                      onChange={(e) => {
+                        const v = parseFloat(e.target.value)
+                        updateRow(row.id, { unitPrice: Number.isFinite(v) ? v : 0 })
+                      }}
+                      className="w-full rounded-lg border border-transparent bg-ds-surface-container-lowest dark:bg-ds-surface-container px-2 py-1.5 font-body text-ds-on-surface tabular-nums outline-none focus:border-ds-primary"
+                    />
+                  </td>
+                  <td className="py-1.5 pr-2">
+                    <input
+                      aria-label={`Quantity ${row.id}`}
+                      type="number"
+                      inputMode="numeric"
+                      step="1"
+                      min="1"
+                      value={Number.isFinite(row.quantity) ? row.quantity : ''}
+                      onChange={(e) => {
+                        const v = parseFloat(e.target.value)
+                        updateRow(row.id, { quantity: Number.isFinite(v) && v >= 1 ? v : 1 })
+                      }}
+                      className="w-full rounded-lg border border-transparent bg-ds-surface-container-lowest dark:bg-ds-surface-container px-2 py-1.5 font-body text-ds-on-surface tabular-nums outline-none focus:border-ds-primary"
+                    />
+                  </td>
+                  <td className="py-1.5 text-right font-label font-semibold text-ds-primary tabular-nums">
+                    ${lineSubtotal(row).toFixed(2)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex items-center justify-between px-1 py-2 bg-ds-surface-container-low dark:bg-ds-surface-container-high rounded-xl">
+          <span className="font-headline font-bold text-ds-on-surface">Total</span>
+          <span className="font-headline font-bold text-ds-primary tabular-nums">${grandTotal.toFixed(2)}</span>
+        </div>
+
+        <Button
+          type="button"
+          variant="pill-ghost"
+          className="w-full border border-ds-outline-variant"
+          onClick={addRow}
+        >
+          <Plus className="w-4 h-4 mr-2" aria-hidden />
+          Add row
+        </Button>
+
+        {error ? (
+          <p className="font-body text-sm text-red-600 dark:text-red-400" role="alert">
+            {error}
+          </p>
+        ) : null}
+
+        <Button variant="pill" className="w-full" type="button" disabled={loading} onClick={handleShare}>
+          {loading ? 'Sharing…' : 'Share'}
+        </Button>
+      </PageLayout>
+    </div>
+  )
+}
