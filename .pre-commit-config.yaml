@@ -16,3 +16,18 @@ repos:
         files: ^backend/.*\.py$
       - id: ruff-format
         files: ^backend/.*\.py$
+
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: frontend lint (eslint)
+        language: system
+        entry: bash -c 'cd frontend && bun run lint'
+        pass_filenames: false
+        files: ^frontend/
+      - id: frontend-test
+        name: frontend test (vitest)
+        language: system
+        entry: bash -c 'cd frontend && bun run test'
+        pass_filenames: false
+        files: ^frontend/
