@@ -5,7 +5,8 @@ import { PageLayout } from '@/components/PageLayout'
 import { Button } from '@/components/ui/button'
 import { usePreferCameraCapture } from '@/hooks/usePreferCameraCapture'
 import { decodeQrFromImageFile } from '@/lib/joinQrScan'
-import { parseSettlementIdFromJoinPayload } from '@/lib/joinSettlementUrl'
+import { parseJoinPayload } from '@/lib/joinSettlementUrl'
+import { setSettlementCurrency } from '@/lib/settlementSession'
 
 export default function JoinSplit() {
   const navigate = useNavigate()
@@ -50,13 +51,17 @@ export default function JoinSplit() {
   }
 
   const goToSettlement = (raw: string) => {
-    const id = parseSettlementIdFromJoinPayload(raw)
-    if (!id) {
+    const payload = parseJoinPayload(raw)
+    if (!payload) {
       setError('No valid settlement link or ID found in that QR code.')
       return
     }
+    if (payload.currencyCode) {
+      setSettlementCurrency(payload.settlementId, payload.currencyCode)
+    }
     setError(null)
-    navigate(`/split/${encodeURIComponent(id)}`)
+    const params = payload.currencyCode ? `?c=${encodeURIComponent(payload.currencyCode)}` : ''
+    navigate(`/split/${encodeURIComponent(payload.settlementId)}${params}`)
   }
 
   const handleScanQr = async () => {

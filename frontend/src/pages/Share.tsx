@@ -4,8 +4,9 @@ import { PageLayout } from '@/components/PageLayout'
 import { SettlementQr } from '@/components/SettlementQr'
 import { Button } from '@/components/ui/button'
 import { getSettlementForSwipe } from '@/lib/settlementApi'
+import { getSettlementCurrency } from '@/lib/settlementSession'
 
-type ShareLocationState = { settlementName?: string } | null
+type ShareLocationState = { settlementName?: string; currencyCode?: string } | null
 
 export default function Share() {
   const { settlementId } = useParams<{ settlementId: string }>()
@@ -13,6 +14,7 @@ export default function Share() {
   const location = useLocation()
   const stateFromReview = location.state as ShareLocationState
   const [settlementName, setSettlementName] = useState(stateFromReview?.settlementName ?? '')
+  const currencyCode = stateFromReview?.currencyCode ?? (settlementId ? getSettlementCurrency(settlementId) : 'USD')
 
   useEffect(() => {
     if (settlementName || !settlementId) return
@@ -31,7 +33,7 @@ export default function Share() {
         <h2 className="font-headline font-extrabold text-2xl text-ds-on-surface">Share bill</h2>
 
         <div className="bg-ds-surface-container-lowest dark:bg-ds-surface-container rounded-xl p-6">
-          <SettlementQr settlementId={settlementId} settlementName={settlementName || undefined} />
+          <SettlementQr settlementId={settlementId} settlementName={settlementName || undefined} currencyCode={currencyCode} />
         </div>
 
         <Button

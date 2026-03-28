@@ -6,6 +6,7 @@ import { finishSettlement, getSettlementStatus } from '@/lib/settlementApi'
 import {
   formatParticipantLabel,
   getParticipantIdFromSession,
+  getSettlementCurrency,
   isSettlementOwnerSession,
 } from '@/lib/settlementSession'
 
@@ -53,7 +54,8 @@ export default function SettlementStatus() {
     setError(null)
     try {
       const { summary } = await finishSettlement(settlementId)
-      navigate('/summary', { state: { summary, viewerIsOwner: true } })
+      const currencyCode = getSettlementCurrency(settlementId)
+      navigate('/summary', { state: { summary, viewerIsOwner: true, currencyCode } })
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not finish settlement.')
     } finally {

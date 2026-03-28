@@ -11,10 +11,12 @@ type SettlementQrProps = {
   size?: number
   /** Settlement name shown in the share text when copying the link */
   settlementName?: string
+  /** ISO 4217 currency code to embed in the share URL */
+  currencyCode?: string
 }
 
-export function SettlementQr({ settlementId, className, size = 160, settlementName }: SettlementQrProps) {
-  const url = buildJoinSettlementUrl(settlementId)
+export function SettlementQr({ settlementId, className, size = 160, settlementName, currencyCode }: SettlementQrProps) {
+  const url = buildJoinSettlementUrl(settlementId, currencyCode)
   const [copied, setCopied] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null)
 

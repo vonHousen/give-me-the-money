@@ -10,6 +10,35 @@ export function roundMoney(n: number): number {
   return Math.round((n + Number.EPSILON) * 100) / 100
 }
 
+const DEFAULT_CURRENCY = 'USD'
+
+/** Locale-aware currency string using `Intl.NumberFormat`. */
+export function formatMoney(amount: number, currencyCode = DEFAULT_CURRENCY): string {
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: currencyCode,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount)
+  } catch {
+    return `${currencyCode} ${amount.toFixed(2)}`
+  }
+}
+
+/** Extract the symbol (e.g. "$", "€", "zł") for an ISO 4217 currency code. */
+export function getCurrencySymbol(currencyCode = DEFAULT_CURRENCY): string {
+  try {
+    const parts = new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: currencyCode,
+    }).formatToParts(0)
+    return parts.find((p) => p.type === 'currency')?.value ?? currencyCode
+  } catch {
+    return currencyCode
+  }
+}
+
 /**
  * RFC 4122 UUID v4. Uses `crypto.randomUUID` when available; falls back for older
  * WebViews and contexts where `randomUUID` is missing.

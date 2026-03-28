@@ -13,11 +13,12 @@ import {
 import { normalizeSettlementItem, type SettlementItemWire } from '@/lib/settlementTypes'
 import {
   getParticipantIdFromSession,
+  getSettlementCurrency,
   isSettlementOwnerSession,
 } from '@/lib/settlementSession'
-import { roundMoney } from '@/lib/utils'
+import { formatMoney, roundMoney } from '@/lib/utils'
 
-function ItemCard({ item }: { item: SettlementItemWire }) {
+function ItemCard({ item, currencyCode }: { item: SettlementItemWire; currencyCode: string }) {
   const qty = item.quantity
   const unit = roundMoney(item.unitPrice)
 
@@ -49,11 +50,11 @@ function ItemCard({ item }: { item: SettlementItemWire }) {
             {item.name}
           </h2>
           <p className="font-body text-xs text-ds-on-surface-variant/90 mt-1.5 tabular-nums">
-            Unit ${unit.toFixed(2)}
+            Unit {formatMoney(unit, currencyCode)}
             {qty > 1 ? ' · line total below' : null}
           </p>
         </div>
-        <CurrencyDisplay amount={item.price} className="justify-start scale-75 origin-left" />
+        <CurrencyDisplay amount={item.price} currencyCode={currencyCode} className="justify-start scale-75 origin-left" />
       </div>
     </div>
   )
@@ -75,6 +76,7 @@ export default function Swipe() {
   const swipeRef = useRef<SwipeCardHandle>(null)
 
   const participantId = settlementId ? getParticipantIdFromSession(settlementId) : null
+  const currencyCode = settlementId ? getSettlementCurrency(settlementId) : 'USD'
 
   useEffect(() => {
     if (!settlementId) {
@@ -212,7 +214,7 @@ export default function Swipe() {
   const lineQty = current.quantity
   const behindSlots = items
     .slice(index + 1, index + 3)
-    .map((item) => <ItemCard key={item.id} item={item} />)
+    .map((item) => <ItemCard key={item.id} item={item} currencyCode={currencyCode} />)
 
   return (
     <div className="min-h-screen">
@@ -246,7 +248,7 @@ export default function Swipe() {
             className="w-full"
             behindSlots={behindSlots.length > 0 ? behindSlots : undefined}
           >
-            <ItemCard item={current} />
+            <ItemCard item={current} currencyCode={currencyCode} />
           </SwipeCard>
         ) : (
           <QuantityPickOverlay
