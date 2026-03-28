@@ -102,7 +102,7 @@ export default function Review() {
       if (ownerUser) {
         markSettlementOwnerSession(res.id, ownerUser.id)
       }
-      navigate(`/share/${res.id}`)
+      navigate(`/share/${res.id}`, { state: { settlementName: settlementName.trim() || 'Receipt' } })
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not create settlement.')
     } finally {

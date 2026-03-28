@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { TopAppBar } from '@/components/TopAppBar'
 import { PageLayout } from '@/components/PageLayout'
 import { SettlementQr } from '@/components/SettlementQr'
 import { Button } from '@/components/ui/button'
-import { joinSettlement } from '@/lib/settlementApi'
+import { getSettlementForSwipe, joinSettlement } from '@/lib/settlementApi'
 import { setParticipantSession } from '@/lib/settlementSession'
 
 /**
@@ -16,6 +16,14 @@ export default function JoinSettlement() {
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [settlementName, setSettlementName] = useState('')
+
+  useEffect(() => {
+    if (!settlementId) return
+    getSettlementForSwipe(settlementId).then((s) => {
+      if (s?.name) setSettlementName(s.name)
+    }).catch(() => {})
+  }, [settlementId])
 
   if (!settlementId) {
     return null
@@ -86,7 +94,7 @@ export default function JoinSettlement() {
           <p className="font-body text-ds-on-surface-variant text-sm mb-4">
             Scan the code or open this link on another device to join the split.
           </p>
-          <SettlementQr settlementId={settlementId} />
+          <SettlementQr settlementId={settlementId} settlementName={settlementName || undefined} />
         </div>
       </PageLayout>
     </div>

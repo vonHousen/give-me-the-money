@@ -1,57 +1,71 @@
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Sun, Moon, QrCode } from 'lucide-react'
+import { Camera, Upload, QrCode } from 'lucide-react'
+import { TopAppBar } from '@/components/TopAppBar'
+import { PageLayout } from '@/components/PageLayout'
 import { Button } from '@/components/ui/button'
+import { usePreferCameraCapture } from '@/hooks/usePreferCameraCapture'
 import { decodeQrFromImageFile } from '@/lib/joinQrScan'
 import { parseSettlementIdFromJoinPayload } from '@/lib/joinSettlementUrl'
 
-function useDarkMode() {
-  const [isDark, setIsDark] = useState(
-    () => document.documentElement.classList.contains('dark'),
-  )
-  const toggle = () => {
-    const next = document.documentElement.classList.toggle('dark')
-    localStorage.setItem('theme', next ? 'dark' : 'light')
-    setIsDark(next)
-  }
-  return { isDark, toggle }
-}
-
 export default function JoinSplit() {
   const navigate = useNavigate()
-  const { isDark, toggle } = useDarkMode()
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const preferCameraCapture = usePreferCameraCapture()
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const uploadInputRef = useRef<HTMLInputElement>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [settlementId, setSettlementId] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [scanning, setScanning] = useState(false)
 
+  const clearPreview = useCallback(() => {
+    setPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return null
+    })
+    setSelectedFile(null)
+  }, [])
+
+  useEffect(
+    () => () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    },
+    [previewUrl],
+  )
+
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setError('Please choose an image file.')
+      return
+    }
+    setError(null)
+    setSelectedFile(file)
+    setPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return URL.createObjectURL(file)
+    })
+  }
+
   const goToSettlement = (raw: string) => {
     const id = parseSettlementIdFromJoinPayload(raw)
     if (!id) {
-      setError('That does not look like a settlement link or ID.')
+      setError('No valid settlement link or ID found in that QR code.')
       return
     }
     setError(null)
     navigate(`/split/${encodeURIComponent(id)}`)
   }
 
-  const handleContinue = () => {
-    const id = settlementId.trim()
-    if (!id) {
-      setError('Enter a settlement ID or scan the QR code from the host.')
-      return
-    }
-    goToSettlement(id)
-  }
-
-  const handlePickQrImage = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
-    setError(null)
+  const handleScanQr = async () => {
+    if (!selectedFile) return
     setScanning(true)
+    setError(null)
     try {
-      const text = await decodeQrFromImageFile(file)
+      const text = await decodeQrFromImageFile(selectedFile)
       if (!text?.trim()) {
         setError('No QR code found in that image. Try again or enter the code manually.')
         return
@@ -64,65 +78,143 @@ export default function JoinSplit() {
     }
   }
 
+  const handleContinue = () => {
+    const id = settlementId.trim()
+    if (!id) {
+      setError('Enter a settlement ID or scan the QR code from the host.')
+      return
+    }
+    goToSettlement(id)
+  }
+
   return (
-    <div className="min-h-screen bg-ds-surface flex flex-col items-center justify-center px-6 relative overflow-hidden">
-      <div className="absolute -top-32 -right-32 w-96 h-96 bg-ds-primary rounded-full blur-[120px] opacity-15 pointer-events-none" />
-      <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-ds-secondary-container rounded-full blur-[120px] opacity-20 pointer-events-none" />
+    <div className="min-h-screen bg-ds-surface">
+      {preferCameraCapture ? (
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="sr-only"
+          aria-label="Capture QR code with camera"
+          tabIndex={-1}
+          onChange={onFileChange}
+        />
+      ) : null}
+      <input
+        ref={uploadInputRef}
+        type="file"
+        accept="image/*"
+        className="sr-only"
+        aria-label="Upload QR code image from files"
+        tabIndex={-1}
+        onChange={onFileChange}
+      />
 
-      <button
-        onClick={toggle}
-        className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full hover:bg-ds-surface-container-low transition-colors"
-        aria-label="Toggle dark mode"
-        type="button"
-      >
-        {isDark ? (
-          <Sun className="w-5 h-5 text-ds-on-surface-variant" />
-        ) : (
-          <Moon className="w-5 h-5 text-ds-on-surface-variant" />
-        )}
-      </button>
-
-      <div className="relative z-10 flex flex-col gap-6 w-full max-w-sm">
-        <div className="text-center space-y-2">
-          <h1 className="font-headline font-extrabold text-2xl text-ds-on-surface">Join settlement</h1>
-          <p className="font-body text-ds-on-surface-variant text-sm">
-            Scan the host&apos;s QR code, paste the link, or type the settlement ID. Opening the same link in
-            Camera or Google Lens opens this app in the browser.
+      <TopAppBar />
+      <PageLayout className="flex flex-col gap-6">
+        <div className="space-y-1">
+          <h2 className="font-headline font-extrabold text-3xl text-ds-on-surface tracking-tight leading-tight">
+            Scan a <br />
+            <span className="text-ds-primary">QR Code.</span>
+          </h2>
+          <p className="font-body text-ds-on-surface-variant text-sm max-w-[80%]">
+            Snap or upload the host&apos;s QR code to join the split, or enter the code manually below.
           </p>
         </div>
 
-        <input
-          id="join-settlement-qr-file"
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="sr-only"
-          tabIndex={-1}
-          aria-label="Choose a photo of the settlement QR code"
-          onChange={(ev) => void handlePickQrImage(ev)}
-        />
+        {/* Viewfinder */}
+        <div className="relative bg-ds-surface-container-low dark:bg-ds-surface-container rounded-[2rem] aspect-square w-full flex items-center justify-center overflow-hidden">
+          <div className="absolute inset-0 opacity-40 mix-blend-overlay bg-gradient-to-tr from-ds-surface-container to-ds-surface-container-lowest pointer-events-none" />
+          <div className="absolute inset-8 border-2 border-dashed border-ds-outline-variant opacity-30 rounded-xl pointer-events-none" />
 
-        <div className="space-y-3">
-          <Button
-            variant="pill"
-            className="w-full py-4 gap-3"
-            type="button"
-            disabled={scanning}
-            onClick={() => fileInputRef.current?.click()}
-            aria-controls="join-settlement-qr-file"
-          >
-            <QrCode className="w-5 h-5 shrink-0" />
-            {scanning ? 'Reading QR…' : 'Scan QR code'}
-          </Button>
-          <p className="font-body text-ds-on-surface-variant text-xs text-center">Uses your camera or photo library</p>
+          {['top-4 left-4 border-t-2 border-l-2', 'top-4 right-4 border-t-2 border-r-2', 'bottom-4 left-4 border-b-2 border-l-2', 'bottom-4 right-4 border-b-2 border-r-2'].map(
+            (pos, i) => (
+              <div key={i} className={`absolute w-8 h-8 ${pos} border-ds-primary rounded-sm pointer-events-none`} />
+            ),
+          )}
+
+          {previewUrl ? (
+            <img
+              src={previewUrl}
+              alt="QR code preview"
+              className="relative z-[1] max-h-full max-w-full object-contain px-4 py-6"
+            />
+          ) : (
+            <div className="relative flex flex-col items-center text-center px-12">
+              <div className="w-20 h-20 mb-5 bg-ds-primary-container dark:bg-ds-surface-container-high rounded-full flex items-center justify-center shadow-sm">
+                <QrCode className="w-9 h-9 text-ds-on-primary-container dark:text-ds-primary" />
+              </div>
+              <h3 className="font-headline text-lg font-bold text-ds-on-surface">No QR code selected</h3>
+              <p className="text-sm text-ds-on-surface-variant mt-1">
+                Take a photo or upload an image of the host&apos;s QR code.
+              </p>
+            </div>
+          )}
         </div>
 
+        {/* Take Photo / Upload buttons */}
+        <div className={`flex gap-3 ${preferCameraCapture ? '' : 'flex-col'}`}>
+          {preferCameraCapture ? (
+            <Button
+              type="button"
+              variant="pill"
+              className="flex-1 gap-2"
+              onClick={() => cameraInputRef.current?.click()}
+            >
+              <Camera className="w-4 h-4" />
+              Take Photo
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant={preferCameraCapture ? 'pill-ghost' : 'pill'}
+            className={preferCameraCapture ? 'flex-1 gap-2' : 'w-full gap-2'}
+            onClick={() => uploadInputRef.current?.click()}
+          >
+            <Upload className="w-4 h-4" />
+            Upload
+          </Button>
+        </div>
+
+        {previewUrl ? (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              className="text-xs font-medium text-ds-primary hover:underline"
+              onClick={() => {
+                clearPreview()
+                setError(null)
+              }}
+            >
+              Clear photo
+            </button>
+          </div>
+        ) : null}
+
+        {error ? (
+          <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+            {error}
+          </p>
+        ) : null}
+
+        <Button
+          variant="pill"
+          className="w-full"
+          disabled={!selectedFile || scanning}
+          onClick={() => void handleScanQr()}
+        >
+          {scanning ? 'Scanning…' : 'Scan QR Code'}
+        </Button>
+
+        {/* Divider */}
         <div className="flex items-center gap-3">
           <div className="h-px flex-1 bg-ds-outline-variant" />
           <span className="font-label text-ds-on-surface-variant text-xs uppercase tracking-wide">or enter code</span>
           <div className="h-px flex-1 bg-ds-outline-variant" />
         </div>
 
+        {/* Manual entry */}
         <div className="space-y-2">
           <label htmlFor="settlement-id" className="font-label font-semibold text-ds-on-surface text-sm">
             Settlement ID or link
@@ -137,12 +229,6 @@ export default function JoinSplit() {
           />
         </div>
 
-        {error ? (
-          <p className="font-body text-sm text-red-600 dark:text-red-400" role="alert">
-            {error}
-          </p>
-        ) : null}
-
         <div className="flex flex-col gap-3">
           <Button variant="pill" className="w-full py-4" type="button" onClick={handleContinue}>
             Continue
@@ -151,7 +237,7 @@ export default function JoinSplit() {
             Back home
           </Button>
         </div>
-      </div>
+      </PageLayout>
     </div>
   )
 }
