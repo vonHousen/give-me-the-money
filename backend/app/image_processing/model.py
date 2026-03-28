@@ -10,6 +10,10 @@ class ReceiptRow(BaseModel):
     total_cost: Decimal = Field(ge=0)
 
 
+class ReceiptRowWithImage(ReceiptRow):
+    generated_image_base64: str | None = None
+
+
 class RestaurantInfo(BaseModel):
     nip: str | None = None
     restaurant_address: str | None = None
@@ -39,6 +43,10 @@ class ProcessedReceipt(BaseModel):
     @classmethod
     def normalize_currency_code(cls, value: str) -> str:
         return value.strip().upper()
+
+
+class ProcessedReceiptWithImages(ProcessedReceipt):
+    rows: list[ReceiptRowWithImage]
 
 
 class EnrichedRestaurantInfo(RestaurantInfo):

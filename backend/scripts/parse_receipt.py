@@ -18,12 +18,16 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.image_processing.parse_receipt import parse_receipt  # noqa: E402
+from app.image_processing.generate_receipt_images import (  # noqa: E402
+    enrich_processed_receipt_with_images_async,
+)
 from app.image_processing.verify_restaurant_lookup import verify_restaurant_lookup_info  # noqa: E402
 from app.logging import configure_logging  # noqa: E402
 
 app = typer.Typer(add_completion=False, help="Parse a receipt image and display parsed line items.")
 console = Console()
 IMAGE_PATH_ARG = typer.Argument(..., exists=True, file_okay=True, dir_okay=False)
+GENERATED_DIR = PROJECT_ROOT / "data" / "generated"
 
 
 def _detect_mime_type(image_path: Path) -> str:
@@ -35,6 +39,11 @@ def _format_money(value: Decimal) -> str:
     return f"{value:.2f}"
 
 
+def _persist_generated_image(image_b64: str, out_path: Path) -> None:
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_bytes(base64.b64decode(image_b64))
+
+
 @app.command()
 def main(
     image_path: Path = IMAGE_PATH_ARG,
@@ -42,6 +51,11 @@ def main(
         False,
         "--verify-restaurant",
         help="Run async restaurant verification on extracted restaurant info.",
+    ),
+    generate_images: bool = typer.Option(
+        False,
+        "--generate-images",
+        help="Generate per-item images with Gemini and save them in data/generated.",
     ),
 ) -> None:
     """Parse receipt image with Gemini-powered parser."""
@@ -84,6 +98,27 @@ def main(
             )
 
         console.print(table)
+
+    if generate_images:
+        with_images = asyncio.run(enrich_processed_receipt_with_images_async(result))
+        generated_table = Table(
+            title=f"Generated Images ({len(with_images.rows)} rows)", header_style="bold cyan"
+        )
+        generated_table.add_column("#", justify="right")
+        generated_table.add_column("item_name")
+        generated_table.add_column("generated", justify="center")
+        generated_table.add_column("path")
+
+        for idx, row in enumerate(with_images.rows, start=1):
+            out_path = GENERATED_DIR / f"{image_path.stem}_{idx}.png"
+            if row.generated_image_base64:
+                _persist_generated_image(row.generated_image_base64, out_path)
+                generated_table.add_row(str(idx), row.item_name, "yes", str(out_path))
+            else:
+                generated_table.add_row(str(idx), row.item_name, "no", "-")
+
+        console.rule("[bold cyan]Generated Receipt Images[/bold cyan]")
+        console.print(generated_table)
 
     if verify_restaurant:
         enriched = asyncio.run(verify_restaurant_lookup_info(result))

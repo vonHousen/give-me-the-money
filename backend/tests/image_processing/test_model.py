@@ -8,7 +8,9 @@ from app.image_processing.model import (
     EnrichedReceiptRow,
     EnrichedRestaurantInfo,
     ProcessedReceipt,
+    ProcessedReceiptWithImages,
     ReceiptRow,
+    ReceiptRowWithImage,
 )
 
 
@@ -150,3 +152,42 @@ def test_enriched_receipt_row_when_confidence_out_of_range_expect_validation_err
                 "match_confidence": 1.2,
             }
         )
+
+
+def test_receipt_row_with_image_when_valid_payload_expect_optional_image_supported() -> None:
+    row = ReceiptRowWithImage.model_validate(
+        {
+            "item_name": "Soup",
+            "item_count": 1,
+            "total_cost": "12.00",
+            "generated_image_base64": "Zm9vYmFy",
+        }
+    )
+
+    assert row.generated_image_base64 == "Zm9vYmFy"
+
+
+def test_processed_receipt_with_images_when_valid_payload_expect_total_and_currency() -> None:
+    receipt = ProcessedReceiptWithImages.model_validate(
+        {
+            "rows": [
+                {
+                    "item_name": "Soup",
+                    "item_count": 1,
+                    "total_cost": "12.00",
+                    "generated_image_base64": None,
+                },
+                {
+                    "item_name": "Bread",
+                    "item_count": 1,
+                    "total_cost": "5.00",
+                    "generated_image_base64": "YWJj",
+                },
+            ],
+            "currency_code": "pln",
+        }
+    )
+
+    assert receipt.currency_code == "PLN"
+    assert receipt.calculated_total == Decimal("17.00")
+    assert receipt.rows[0].generated_image_base64 is None
