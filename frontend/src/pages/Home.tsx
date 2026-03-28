@@ -39,7 +39,7 @@ export default function Home() {
       <div className="relative z-10 flex flex-col items-center gap-8 w-full max-w-sm">
         <div className="text-center space-y-3">
           <h1 className="font-headline font-extrabold text-4xl text-ds-primary tracking-tight">
-            Give Me The Money
+            fAIrsplit
           </h1>
           <p className="font-body text-ds-on-surface-variant text-base">
             Split bills without the awkward maths.
