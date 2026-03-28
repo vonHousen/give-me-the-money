@@ -40,3 +40,20 @@ def test_processed_receipt_when_lowercase_currency_expect_uppercase_currency_cod
 
     # Assert
     assert receipt.currency_code == "PLN"
+
+
+def test_processed_receipt_when_multiple_rows_expect_calculated_total_sum() -> None:
+    # Arrange
+    payload = {
+        "rows": [
+            {"item_name": "Bread", "item_count": 1, "total_cost": "5.99"},
+            {"item_name": "Milk", "item_count": 2, "total_cost": "8.01"},
+        ],
+        "currency_code": "pln",
+    }
+
+    # Act
+    receipt = ProcessedReceipt.model_validate(payload)
+
+    # Assert
+    assert receipt.calculated_total == Decimal("14.00")

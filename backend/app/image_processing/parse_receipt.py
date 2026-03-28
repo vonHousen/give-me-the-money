@@ -1,4 +1,5 @@
 import os
+import time
 
 from google import genai
 from google.genai import types
@@ -7,6 +8,9 @@ from app.image_processing import response_formats, utils
 from app.image_processing.exceptions import ImageProcessingConfigError, ImageProcessingUpstreamError
 from app.image_processing.model import ProcessedReceipt
 from app.image_processing.prompts import build_receipt_prompt
+from app.logging import get_logger
+
+LOGGER = get_logger(__name__)
 
 
 def parse_receipt(img_b64: str, mime_type: str = "image/jpeg") -> ProcessedReceipt:
@@ -29,6 +33,7 @@ def parse_receipt(img_b64: str, mime_type: str = "image/jpeg") -> ProcessedRecei
 
     client = genai.Client(api_key=api_key)
 
+    llm_call_started = time.perf_counter()
     try:
         response = client.models.generate_content(
             model=model_name,
@@ -44,9 +49,8 @@ def parse_receipt(img_b64: str, mime_type: str = "image/jpeg") -> ProcessedRecei
     except Exception as exc:  # noqa: BLE001
         raise ImageProcessingUpstreamError("gemini request failed") from exc
 
-    raw = utils.coerce_raw_response(response.parsed)
-    rows, warnings = utils.normalize_rows(raw.rows)
-    if warnings:
-        utils.LOGGER.debug("parse_receipt warnings: %s", warnings)
+    llm_call_elapsed = time.perf_counter() - llm_call_started
+    LOGGER.debug("LLM call elapsed time: %.3fs", llm_call_elapsed)
 
-    return ProcessedReceipt(rows=rows, currency_code=utils.DEFAULT_CURRENCY_CODE)
+    parsed_receipt: response_formats.ProcessedReceipt = utils.coerce_raw_response(response.parsed)
+    return utils.to_model_processed_receipt(parsed_receipt)

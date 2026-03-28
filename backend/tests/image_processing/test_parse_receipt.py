@@ -1,5 +1,6 @@
 import base64
 import importlib
+from decimal import Decimal
 from typing import Any
 
 import pytest
@@ -106,6 +107,7 @@ def test_parse_receipt_when_raw_base64_input_expect_processed_receipt(
     assert result.currency_code == "PLN"
     assert len(result.rows) == 1
     assert result.rows[0].item_name == "Tomato"
+    assert result.calculated_total == Decimal("12.50")
     assert capture["api_key"] == "test-key"
     assert capture["request"]["contents"][0]["mime_type"] == "image/jpeg"
 

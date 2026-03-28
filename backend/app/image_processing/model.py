@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, computed_field, field_validator
 
 
 class ReceiptRow(BaseModel):
@@ -12,6 +12,11 @@ class ReceiptRow(BaseModel):
 class ProcessedReceipt(BaseModel):
     rows: list[ReceiptRow]
     currency_code: str = Field(min_length=3, max_length=3)
+
+    @computed_field
+    @property
+    def calculated_total(self) -> Decimal:
+        return sum((row.total_cost for row in self.rows), Decimal("0"))
 
     @field_validator("currency_code")
     @classmethod

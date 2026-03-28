@@ -10,15 +10,16 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-# Ensure local app imports work when invoked as a script.
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.image_processing.parse_receipt import parse_receipt
+from app.logging import configure_logging
 
 app = typer.Typer(add_completion=False, help="Parse a receipt image and display parsed line items.")
 console = Console()
+IMAGE_PATH_ARG = typer.Argument(..., exists=True, file_okay=True, dir_okay=False)
 
 
 def _detect_mime_type(image_path: Path) -> str:
@@ -32,9 +33,11 @@ def _format_money(value: Decimal) -> str:
 
 @app.command()
 def main(
-    image_path: Path = typer.Argument(..., exists=True, file_okay=True, dir_okay=False),
+    image_path: Path = IMAGE_PATH_ARG,
 ) -> None:
     """Parse receipt image with Gemini-powered parser."""
+    configure_logging()
+
     image_bytes = image_path.read_bytes()
     img_b64 = base64.b64encode(image_bytes).decode("utf-8")
     mime_type = _detect_mime_type(image_path)
@@ -44,6 +47,7 @@ def main(
     console.rule("[bold cyan]Receipt Parse Result[/bold cyan]")
     console.print(f"[bold]File:[/bold] {image_path}")
     console.print(f"[bold]Currency:[/bold] {result.currency_code}")
+    console.print(f"[bold]Calculated total:[/bold] {_format_money(result.calculated_total)}")
 
     if not result.rows:
         console.print("[yellow]No rows found.[/yellow]")
