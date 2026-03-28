@@ -1,7 +1,7 @@
 import logging
 from decimal import Decimal
 
-from app.image_processing import response_formats, utils
+from app.image_processing.ocr import response_formats, utils
 
 
 def test_to_model_processed_receipt_when_valid_raw_receipt_expect_domain_model() -> None:

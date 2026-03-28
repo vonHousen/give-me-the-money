@@ -4,10 +4,18 @@ import time
 from google import genai
 from google.genai import types
 
-from app.image_processing import response_formats, utils
-from app.image_processing.exceptions import ImageProcessingConfigError, ImageProcessingUpstreamError
 from app.image_processing.model import ProcessedReceipt
-from app.image_processing.prompts import build_receipt_prompt
+from app.image_processing.ocr import response_formats, utils
+from app.image_processing.ocr.exceptions import (
+    ImageProcessingConfigError,
+    ImageProcessingError,
+    ImageProcessingUpstreamError,
+)
+from app.image_processing.ocr.prompts import build_receipt_prompt
+from app.image_processing.restaurant_web_search import (
+    enrich_restaurant_from_web,
+    is_web_search_enabled,
+)
 from app.logging import get_logger
 
 LOGGER = get_logger(__name__)
@@ -54,4 +62,11 @@ def parse_receipt(img_b64: str, mime_type: str = "image/jpeg") -> ProcessedRecei
 
     parsed_receipt: response_formats.ProcessedReceipt = utils.coerce_raw_response(response.parsed)
     utils.log_extracted_restaurant_attributes(parsed_receipt)
+
+    if is_web_search_enabled():
+        try:
+            _ = enrich_restaurant_from_web(parsed_receipt.restaurant_info)
+        except ImageProcessingError as exc:
+            LOGGER.warning("Restaurant web-search enrichment failed: %s", exc)
+
     return utils.to_model_processed_receipt(parsed_receipt)

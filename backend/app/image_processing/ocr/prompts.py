@@ -1,6 +1,6 @@
 from textwrap import dedent
 
-from app.image_processing.response_formats import ProcessedReceipt
+from app.image_processing.ocr.response_formats import ProcessedReceipt
 
 PROMPT_RECEIPT_PARSER = dedent(f"""
     Extract line items from this receipt image.

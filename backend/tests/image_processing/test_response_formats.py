@@ -3,7 +3,7 @@ from decimal import Decimal
 import pytest
 from pydantic import ValidationError
 
-from app.image_processing.response_formats import ProcessedReceipt
+from app.image_processing.ocr.response_formats import ProcessedReceipt
 
 
 def test_schema_when_valid_raw_payload_expect_schema_parses() -> None:

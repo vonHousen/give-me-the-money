@@ -1,4 +1,4 @@
-from app.image_processing.prompts import build_receipt_prompt
+from app.image_processing.ocr.prompts import build_receipt_prompt
 
 
 def test_prompt_when_building_receipt_prompt_expect_required_instructions_present() -> None:

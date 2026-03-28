@@ -6,16 +6,16 @@ from typing import Any
 
 import pytest
 
-from app.image_processing.exceptions import (
+from app.image_processing.ocr.exceptions import (
     ImageProcessingConfigError,
     ImageProcessingParseError,
     ImageProcessingUpstreamError,
 )
-from app.image_processing.response_formats import ProcessedReceipt
+from app.image_processing.ocr.response_formats import ProcessedReceipt
 
 parse_receipt_module = importlib.import_module("app.image_processing.parse_receipt")
 parse_receipt = parse_receipt_module.parse_receipt
-utils_module = importlib.import_module("app.image_processing.utils")
+utils_module = importlib.import_module("app.image_processing.ocr.utils")
 
 
 class _FakePart:
