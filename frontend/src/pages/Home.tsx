@@ -61,7 +61,7 @@ export default function Home() {
           <Button
             variant="pill-ghost"
             className="w-full py-4 text-base gap-3"
-            onClick={() => navigate('/swipe')}
+            onClick={() => navigate('/join')}
           >
             <Users className="w-5 h-5" />
             Join a Split

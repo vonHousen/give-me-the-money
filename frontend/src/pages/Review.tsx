@@ -5,6 +5,7 @@ import { TopAppBar } from '@/components/TopAppBar'
 import { PageLayout } from '@/components/PageLayout'
 import { Button } from '@/components/ui/button'
 import { createSettlement } from '@/lib/settlementApi'
+import { markSettlementOwnerSession } from '@/lib/settlementSession'
 import { roundMoney } from '@/lib/utils'
 import type { ReviewLocationState } from '@/pages/Scan'
 
@@ -81,6 +82,10 @@ export default function Review() {
           price: lineSubtotal(r),
         })),
       })
+      const ownerUser = res.users[0]
+      if (ownerUser) {
+        markSettlementOwnerSession(res.id, ownerUser.id)
+      }
       navigate(`/share/${res.id}`)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not create settlement.')
