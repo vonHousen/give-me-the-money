@@ -1,0 +1,66 @@
+from decimal import Decimal
+from textwrap import dedent
+from typing import ClassVar
+
+from pydantic import BaseModel, Field
+
+
+class RestaurantMatch(BaseModel):
+    restaurant_name: str | None = None
+    restaurant_address: str | None = None
+    website_url: str | None = None
+    confidence: float = Field(default=0.0, ge=0, le=1)
+    evidence_urls: list[str] = Field(default_factory=list)
+
+
+class RestaurantWebSearchResponse(BaseModel):
+    STRUCTURED_OUTPUT_HINT: ClassVar[str] = dedent("""
+        Return JSON only with this shape:
+        {
+          "match": {
+            "restaurant_name": "string | null",
+            "restaurant_address": "string | null",
+            "website_url": "https://... | null",
+            "confidence": 0.0,
+            "evidence_urls": ["https://..."]
+          },
+          "menu_source_urls": ["https://..."]
+        }
+        Use null when a scalar value cannot be reliably established.
+    """).strip()
+
+    match: RestaurantMatch | None = None
+    menu_source_urls: list[str] = Field(default_factory=list)
+
+
+class ReceiptRowMenuMatch(BaseModel):
+    row_item_name: str = Field(min_length=1)
+    is_menu_match: bool
+    matched_menu_item_name: str | None = None
+    matched_menu_item_description: str | None = None
+    matched_menu_item_image_url: str | None = None
+    matched_menu_item_price: Decimal | None = Field(default=None, ge=0)
+    match_confidence: float | None = Field(default=None, ge=0, le=1)
+
+
+class MenuItemVerificationResponse(BaseModel):
+    STRUCTURED_OUTPUT_HINT: ClassVar[str] = dedent("""
+        Return JSON only with this shape:
+        {
+          "matches": [
+            {
+              "row_item_name": "string",
+              "is_menu_match": true,
+              "matched_menu_item_name": "string | null",
+              "matched_menu_item_description": "string | null",
+              "matched_menu_item_image_url": "https://... | null",
+              "matched_menu_item_price": "12.50 | null",
+              "match_confidence": 0.0
+            }
+          ]
+        }
+        Include one entry per provided receipt row item name.
+        Use null when a scalar value cannot be reliably established.
+    """).strip()
+
+    matches: list[ReceiptRowMenuMatch] = Field(default_factory=list)

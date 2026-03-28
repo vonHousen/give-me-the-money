@@ -3,7 +3,13 @@ from decimal import Decimal
 import pytest
 from pydantic import ValidationError
 
-from app.image_processing.model import ProcessedReceipt, ReceiptRow
+from app.image_processing.model import (
+    EnrichedProcessedReceipt,
+    EnrichedReceiptRow,
+    EnrichedRestaurantInfo,
+    ProcessedReceipt,
+    ReceiptRow,
+)
 
 
 def test_receipt_row_when_valid_payload_expect_decimal_and_types_validated() -> None:
@@ -57,3 +63,90 @@ def test_processed_receipt_when_multiple_rows_expect_calculated_total_sum() -> N
 
     # Assert
     assert receipt.calculated_total == Decimal("14.00")
+
+
+def test_processed_receipt_when_lookup_info_missing_expect_default_lookup_info() -> None:
+    payload = {
+        "rows": [{"item_name": "Bread", "item_count": 1, "total_cost": "5.99"}],
+        "currency_code": "pln",
+    }
+
+    receipt = ProcessedReceipt.model_validate(payload)
+
+    assert receipt.restaurant_info.restaurant_name is None
+    assert receipt.restaurant_info.restaurant_address is None
+    assert receipt.restaurant_info.nip is None
+
+
+def test_enriched_lookup_info_when_web_data_present_expect_fields_available() -> None:
+    enriched = EnrichedRestaurantInfo.model_validate(
+        {
+            "restaurant_name": "Bistro XYZ",
+            "restaurant_address": "Main Street 10, Warsaw",
+            "website_url": "https://example.com",
+            "evidence_urls": ["https://example.com/about"],
+            "menu_source_urls": ["https://example.com/menu"],
+        }
+    )
+
+    assert enriched.restaurant_name == "Bistro XYZ"
+    assert enriched.website_url == "https://example.com"
+    assert len(enriched.evidence_urls) == 1
+    assert len(enriched.menu_source_urls) == 1
+
+
+def test_enriched_processed_receipt_when_valid_payload_expect_calculated_total() -> None:
+    enriched = EnrichedProcessedReceipt.model_validate(
+        {
+            "rows": [
+                {
+                    "item_name": "Soup",
+                    "item_count": 1,
+                    "total_cost": "12.00",
+                    "is_menu_match": True,
+                    "matched_menu_item_name": "Soup of the day",
+                    "matched_menu_item_description": "Classic tomato soup with basil.",
+                    "matched_menu_item_image_url": "https://example.com/soup.jpg",
+                    "matched_menu_item_price": "12.00",
+                    "match_confidence": 0.92,
+                },
+                {
+                    "item_name": "Bread",
+                    "item_count": 1,
+                    "total_cost": "5.00",
+                    "is_menu_match": False,
+                    "matched_menu_item_name": None,
+                    "matched_menu_item_description": None,
+                    "matched_menu_item_image_url": None,
+                    "matched_menu_item_price": None,
+                    "match_confidence": None,
+                },
+            ],
+            "currency_code": "pln",
+            "restaurant_info": {"restaurant_name": "Bistro XYZ"},
+        }
+    )
+
+    assert enriched.currency_code == "PLN"
+    assert enriched.calculated_total == Decimal("17.00")
+    assert len(enriched.rows) == 2
+    assert enriched.rows[0].is_menu_match is True
+    assert enriched.rows[0].matched_menu_item_description == "Classic tomato soup with basil."
+    assert enriched.rows[0].matched_menu_item_image_url == "https://example.com/soup.jpg"
+
+
+def test_enriched_receipt_row_when_confidence_out_of_range_expect_validation_error() -> None:
+    with pytest.raises(ValidationError):
+        EnrichedReceiptRow.model_validate(
+            {
+                "item_name": "Soup",
+                "item_count": 1,
+                "total_cost": "12.00",
+                "is_menu_match": True,
+                "matched_menu_item_name": "Soup",
+                "matched_menu_item_description": "A",
+                "matched_menu_item_image_url": "https://example.com/soup.jpg",
+                "matched_menu_item_price": "12.00",
+                "match_confidence": 1.2,
+            }
+        )
