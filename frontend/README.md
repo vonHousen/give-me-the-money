@@ -1,102 +1,148 @@
-# fAIrsplit — Frontend
+# Frontend (fAIrsplit)
 
-A mobile-first PWA for splitting restaurant bills. The host scans a receipt, AI extracts the line items, and guests swipe Tinder-style to claim what they ordered. The app calculates everyone's share automatically.
+React + Vite + Bun mobile-first PWA for the bill-splitting user journey.
 
-## App Flow
+## Core User Flows
 
-```
-Host: Scan receipt → AI extracts items → Review & edit items → Invite guests
-Guest: Join session → Swipe to claim dishes → See your total
-```
+Host:
+1. `/` -> tap **Scan a Receipt**
+2. `/scan` -> upload/capture receipt and run analysis
+3. `/review` -> edit line items and create settlement
+4. `/share/:settlementId` -> show QR + join link
+5. `/swipe/:settlementId` -> host can also claim
+6. `/settlement/:settlementId/status` -> monitor participant completion
+7. `/summary` -> final split output
 
-## Tech Stack
+Guest:
+1. `/join` -> scan QR or paste link/ID
+2. `/split/:settlementId` -> enter name and join
+3. `/swipe/:settlementId` -> claim quantities
+4. guest returns to home after swipe completion
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| Vite | 8 | Build tool |
-| React | 19 | UI framework |
-| TypeScript | 5.9 | Type safety |
-| Tailwind CSS | 4 | Styling (CSS-first `@theme` config) |
-| shadcn/ui | latest | Component library (Base UI) |
-| Lucide React | latest | Icons |
-| qrcode.react | latest | QR code generation (Review screen) |
-| React Router | 7 | Client-side routing |
-| vite-plugin-pwa | 1.2 | PWA manifest + service worker |
-| Vitest + Testing Library | 4 | Unit tests |
-| Bun | 1.3 | Package manager + runtime |
+## Stack
 
-## Getting Started
+- React `19`
+- React Router `7`
+- TypeScript `5.9`
+- Vite `8`
+- Bun `1.3`
+- Tailwind CSS `4`
+- `qrcode.react` for QR generation
+- `jsqr` + `BarcodeDetector` fallback chain for QR decoding
+- Vitest + Testing Library
+
+## Run
 
 ```bash
 bun install
-bun run dev        # http://localhost:5173
+bun run dev
 ```
 
-## Commands
+Build/test:
 
 ```bash
-bun run dev        # start dev server
-bun run build      # typecheck + production build
-bun run preview    # serve production build locally
-bun run test       # run tests once
-bun run test:watch # run tests in watch mode
+bun run build
+bun run test
 ```
 
-## Routes
+## Environment
 
-| Path | Screen | Status |
-|------|--------|--------|
-| `/` | Home — host or guest entry point | ✅ implemented |
-| `/scan` | Scan receipt (camera / file upload) | ✅ implemented |
-| `/review` | Review AI-extracted line items + QR code | ✅ implemented |
-| `/swipe` | Guest swipes to claim dishes | ✅ implemented |
-| `/summary` | Final split per person | ✅ implemented |
+See `.env.example`.
 
-## Design System
+- `VITE_RECEIPT_SCAN_API_URL`: base URL for `/analyze` calls
+- `VITE_SETTLEMENT_API_URL`: base URL for settlement endpoints
+- `VITE_PUBLIC_APP_URL`: public origin used in QR/join links
 
-The UI is based on the **equitas_mobile** Stitch design system — "Soft-Modernist / Invisible Assistant" aesthetic:
+If API URLs are empty, frontend uses internal mock implementations.
 
-- **Fonts:** Manrope (headlines) + Inter (body/labels) via Google Fonts
-- **Colors:** `ds-*` prefixed CSS custom properties in `index.css` (`--color-ds-primary: #006b5f`, etc.)
-- **Dark mode:** CSS class-based (`.dark` on `<html>`), toggled via `localStorage`; init script in `index.html` prevents FOUC
-- **No 1px borders** — surfaces are distinguished by background color shifts (`ds-surface-container-*` hierarchy)
+## Frontend Architecture
 
-## Project Structure
+```mermaid
+flowchart TB
+    A[Pages] --> B[lib/receiptScanApi.ts]
+    A --> C[lib/settlementApi.ts]
+    A --> D[lib/settlementSession.ts]
+    A --> E[components/*]
 
-```
-src/
-├── pages/              # one file per route
-│   ├── Home.tsx        # landing, dark mode toggle
-│   ├── Scan.tsx        # camera viewfinder + upload
-│   ├── Review.tsx      # item list + QR code
-│   ├── Swipe.tsx       # card swipe to claim dishes
-│   └── Summary.tsx     # per-person split totals
-├── components/
-│   ├── TopAppBar.tsx   # fixed header: back button + title + action slot
-│   ├── PageLayout.tsx  # content wrapper (offset for fixed header)
-│   ├── CurrencyDisplay.tsx  # editorial price ($428.50)
-│   ├── SwipeCard.tsx   # draggable card with KEEP/SKIP overlays
-│   └── ui/
-│       └── button.tsx  # shadcn Button + pill/pill-ghost variants
-├── hooks/
-│   └── useSwipe.ts     # pointer-events drag hook (custom, no library)
-├── lib/utils.ts        # cn() helper
-├── App.tsx             # route definitions
-├── main.tsx            # entry point + BrowserRouter
-└── index.css           # Tailwind v4 @theme tokens + dark mode overrides
+    B -->|optional HTTP| F[/analyze]
+    C -->|optional HTTP| G[/settlements/*]
+    C --> H[settlementMockStore]
+
+    D --> I[sessionStorage]
+    E --> J[QR create/scan]
 ```
 
-## PWA
+## Route Map
 
-The app ships with a service worker and web manifest (generated by `vite-plugin-pwa`). To make it installable on phones, add real icons to `public/`:
+- `/`: Home
+- `/scan`: receipt capture/upload + analyze
+- `/review`: editable line-item review and settlement creation
+- `/share/:settlementId`: QR/link sharing
+- `/join`: QR scan/manual join input
+- `/split/:settlementId`: deep-link join page
+- `/swipe/:settlementId`: Tinder-like claim UI with quantity overlay
+- `/settlement/:settlementId/status`: host polling status page
+- `/summary`: final split display
 
-- `public/pwa-192x192.png`
-- `public/pwa-512x512.png`
+## Integration Details
 
-The manifest is configured for `display: standalone` and `orientation: portrait`.
+Receipt analysis:
+- `Scan.tsx` encodes selected file into `{ image_base64, mime_type }`.
+- `receiptScanApi.analyzeReceipt()` calls backend when `VITE_RECEIPT_SCAN_API_URL` is set.
+- Otherwise it returns mock analyze data.
 
-## TODO — Next Steps
+Settlement lifecycle:
+- `review -> createSettlement()`
+- `joinSettlement()` from deep-link join page
+- `recordItemClaim()` during swipe
+- `markSwipeComplete()` when done swiping
+- host-only `finishSettlement()` on status page
 
-- [ ] Backend / AI integration — send receipt image, receive structured line items
-- [ ] Real session management — generate join link, sync swipe results across devices
-- [ ] Real PWA icons (`public/pwa-192x192.png`, `public/pwa-512x512.png`)
+Session state:
+- participant ID, owner marker, and currency stored in `sessionStorage` (`gmtm:*` keys)
+
+## Mermaid Sequence (Main Path)
+
+```mermaid
+sequenceDiagram
+    participant H as Host Browser
+    participant G as Guest Browser
+    participant FE as Frontend API Clients
+    participant BE as Backend
+
+    H->>FE: analyzeReceipt(image)
+    FE->>BE: POST /analyze
+    BE-->>FE: items + currency
+
+    H->>FE: createSettlement(lines)
+    FE->>BE: POST /settlements
+    BE-->>H: settlementId
+
+    H->>G: QR/link /split/:settlementId
+    G->>FE: joinSettlement(name)
+    FE->>BE: PUT /settlements/:id/join
+
+    G->>FE: recordItemClaim(...)
+    FE->>BE: POST /settlements/:id/claims
+    G->>BE: POST /settlements/:id/swipe-complete
+
+    H->>BE: GET /settlements/:id/status (polling)
+    H->>BE: POST /settlements/:id/finish
+    BE-->>H: summary
+```
+
+## Unfinished / Main-Path Gaps
+
+- No live sync transport (status uses polling every 2500ms).
+- Guests are redirected to home after swipe completion and do not automatically see summary.
+- `/summary` has fallback stub data when opened without navigation state.
+- No auth/access control on frontend routes (relies on backend openness).
+- In mixed configuration, `Swipe` image fetch assumes backend URL exists; with empty API URL this can request `undefined/image/...`.
+- Currency behavior depends on backend output; current backend analyze path effectively returns PLN.
+
+## UI/Design Notes
+
+- Global shell with atmospheric blurred gradients (`AppShell`).
+- Swipe deck with custom pointer-based hook (`useSwipe`) and programmatic accept/decline.
+- Quantity pick overlay for multi-count items.
+- QR scanning prefers native `BarcodeDetector`, falls back to `jsQR` with image downscaling.
