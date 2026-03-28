@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from backend.app.image_processing import parse_receipt
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -10,12 +11,24 @@ from app.services import settle
 router = APIRouter()
 
 
+class ItemBase(BaseModel):
+    name: str
+    price: float
+    count: int
+
+
+class Item(ItemBase):
+    id: UUID
+
+
 class AnalyzeRequest(BaseModel):
-    image: str  # base64-encoded image
+    image_base64: str
+    mime_type: str
 
 
 class AnalyzeResponse(BaseModel):
     name: str
+    currency_code: str
     items: list[ItemBase]
 
 
@@ -25,7 +38,7 @@ class SettlementRequest(BaseModel):
 
 
 class JoinRequest(BaseModel):
-    user_name: str
+    user_name: str = "Restauracja"
     item_ids: list[UUID]
 
 
@@ -34,12 +47,21 @@ _settlement_repository = SettlementRepository()
 
 @router.post("/analyze", response_model=AnalyzeResponse)
 def analyze(body: AnalyzeRequest) -> AnalyzeResponse:
+    processed_receipt = parse_receipt(img_b64=body.image_base64, mime_type=body.mime_type)
+
+    items = [
+        ItemBase(name=row.item_name, price=float(row.total_cost), count=row.item_count)
+        for row in processed_receipt.rows
+    ]
+
     return AnalyzeResponse(
         name="Pizzeria",
         items=[
             ItemBase(name="Pizza Margherita", price=12.50),
             ItemBase(name="Cola", price=2.00),
         ],
+        currency_code=processed_receipt.currency_code,
+        items=items,
     )
 
 

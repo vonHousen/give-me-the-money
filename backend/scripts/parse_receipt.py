@@ -48,7 +48,9 @@ def main(
     if not result.rows:
         console.print("[yellow]No rows found.[/yellow]")
     else:
-        table = Table(title=f"Extracted Fields ({len(result.rows)} rows)", header_style="bold magenta")
+        table = Table(
+            title=f"Extracted Fields ({len(result.rows)} rows)", header_style="bold magenta"
+        )
         table.add_column("#", justify="right")
         table.add_column("item_name")
         table.add_column("item_count", justify="right")
