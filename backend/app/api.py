@@ -1,15 +1,20 @@
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from app.database.settlement_repository import SettlementRepository
+
 router = APIRouter()
 
 
-class Item(BaseModel):
-    id: UUID
+class ItemBase(BaseModel):
     name: str
     price: float
+
+
+class Item(ItemBase):
+    id: UUID
 
 
 class AnalyzeRequest(BaseModel):
@@ -18,7 +23,7 @@ class AnalyzeRequest(BaseModel):
 
 class AnalyzeResponse(BaseModel):
     name: str
-    items: list[Item]
+    items: list[ItemBase]
 
 
 class User(BaseModel):
@@ -28,7 +33,7 @@ class User(BaseModel):
 
 class SettlementRequest(BaseModel):
     name: str
-    items: list[Item]
+    items: list[ItemBase]
 
 
 class Settlement(BaseModel):
@@ -40,10 +45,12 @@ class Settlement(BaseModel):
 
 
 class JoinRequest(BaseModel):
+    user_name: str
     item_ids: list[UUID]
 
 
 _settlements: list[Settlement] = []
+_settlement_repository = SettlementRepository()
 
 
 @router.post("/analyze", response_model=AnalyzeResponse)
@@ -51,40 +58,39 @@ def analyze(body: AnalyzeRequest) -> AnalyzeResponse:
     return AnalyzeResponse(
         name="Pizzeria",
         items=[
-            Item(
-                id=UUID("00000000-0000-0000-0000-000000000001"),
+            ItemBase(
                 name="Pizza Margherita",
                 price=12.50,
             ),
-            Item(id=UUID("00000000-0000-0000-0000-000000000002"), name="Cola", price=2.00),
+            ItemBase(name="Cola", price=2.00),
         ],
     )
 
 
 @router.post("/settlements", response_model=Settlement, status_code=201)
 def create_settlement(body: SettlementRequest) -> Settlement:
-    settlement = Settlement(
-        id=uuid4(),
+    data = _settlement_repository.create_settlement(
         name=body.name,
-        items=body.items,
-        users=[],
-        assignments={},
+        items=[item.model_dump() for item in body.items],
     )
-    _settlements.append(settlement)
-    return settlement
+    return Settlement(**data)
 
 
 @router.get("/settlements/{id}", response_model=Settlement)
 def get_settlement(id: UUID) -> Settlement:
-    for settlement in _settlements:
-        if settlement.id == id:
-            return settlement
-    raise HTTPException(status_code=404, detail="Settlement not found")
+    data = _settlement_repository.get_settlement(str(id))
+    if data is None:
+        raise HTTPException(status_code=404, detail="Settlement not found")
+    return Settlement(**data)
 
 
 @router.put("/settlements/{id}/join", response_model=Settlement)
 def join_settlement(id: UUID, body: JoinRequest) -> Settlement:
-    for settlement in _settlements:
-        if settlement.id == id:
-            return settlement
-    raise HTTPException(status_code=404, detail="Settlement not found")
+    data = _settlement_repository.join_settlement(
+        settlement_id=str(id),
+        user_name=body.user_name,
+        item_ids=[str(item_id) for item_id in body.item_ids],
+    )
+    if data is None:
+        raise HTTPException(status_code=404, detail="Settlement not found")
+    return Settlement(**data)
