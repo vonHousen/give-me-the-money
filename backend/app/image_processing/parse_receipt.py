@@ -10,7 +10,6 @@ from app.image_processing.model import ProcessedReceipt
 from app.image_processing.prompts import build_receipt_prompt
 from app.logging import get_logger
 
-
 LOGGER = get_logger(__name__)
 
 
@@ -53,9 +52,5 @@ def parse_receipt(img_b64: str, mime_type: str = "image/jpeg") -> ProcessedRecei
     llm_call_elapsed = time.perf_counter() - llm_call_started
     LOGGER.debug("LLM call elapsed time: %.3fs", llm_call_elapsed)
 
-    raw = utils.coerce_raw_response(response.parsed)
-    rows, warnings = utils.normalize_rows(raw.rows)
-    if warnings:
-        LOGGER.debug("parse_receipt warnings: %s", warnings)
-
-    return ProcessedReceipt(rows=rows, currency_code=utils.DEFAULT_CURRENCY_CODE)
+    parsed_receipt: response_formats.ProcessedReceipt = utils.coerce_raw_response(response.parsed)
+    return utils.to_model_processed_receipt(parsed_receipt)

@@ -8,7 +8,7 @@ from pydantic import ValidationError
 
 from app.image_processing import response_formats
 from app.image_processing.exceptions import ImageProcessingParseError
-from app.image_processing.model import ReceiptRow
+from app.image_processing.model import ProcessedReceipt
 
 DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite-preview"
 DEFAULT_CURRENCY_CODE = "PLN"
@@ -50,6 +50,19 @@ def coerce_raw_response(parsed_response: Any) -> response_formats.ProcessedRecei
         ) from exc
 
 
+def to_model_processed_receipt(
+    raw_receipt: response_formats.ProcessedReceipt,
+    currency_code: str = DEFAULT_CURRENCY_CODE,
+) -> ProcessedReceipt:
+    parsed = ProcessedReceipt.model_validate(
+        {
+            "rows": [row.model_dump() for row in raw_receipt.rows],
+            "currency_code": currency_code,
+        },
+    )
+    return parsed
+
+
 def parse_decimal(value: Any) -> Decimal:
     if value is None:
         raise ValueError("amount is missing")
@@ -78,29 +91,3 @@ def parse_decimal(value: Any) -> Decimal:
         return Decimal(cleaned)
     except InvalidOperation as exc:
         raise ValueError(f"invalid amount format: {value}") from exc
-
-
-def normalize_rows(
-    raw_rows: list[response_formats.ReceiptRow],
-) -> tuple[list[ReceiptRow], list[str]]:
-    rows: list[ReceiptRow] = []
-    warnings: list[str] = []
-
-    for index, raw_row in enumerate(raw_rows, start=1):
-        try:
-            item_name = (raw_row.item_name or "").strip()
-            if not item_name:
-                raise ValueError("item_name is missing")
-
-            item_count = int(raw_row.item_count)
-            if item_count < 1:
-                raise ValueError("item_count must be greater than zero")
-
-            total_cost = parse_decimal(raw_row.total_cost)
-            rows.append(
-                ReceiptRow(item_name=item_name, item_count=item_count, total_cost=total_cost),
-            )
-        except Exception as exc:  # noqa: BLE001
-            warnings.append(f"row_{index}_skipped: {exc}")
-
-    return rows, warnings

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import base64
 import mimetypes
-import sys
 from decimal import Decimal
 from pathlib import Path
 
@@ -10,16 +9,12 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-# Ensure local app imports work when invoked as a script.
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
 from app.image_processing.parse_receipt import parse_receipt
 from app.logging import configure_logging
 
 app = typer.Typer(add_completion=False, help="Parse a receipt image and display parsed line items.")
 console = Console()
+IMAGE_PATH_ARG = typer.Argument(..., exists=True, file_okay=True, dir_okay=False)
 
 
 def _detect_mime_type(image_path: Path) -> str:
@@ -33,7 +28,7 @@ def _format_money(value: Decimal) -> str:
 
 @app.command()
 def main(
-    image_path: Path = typer.Argument(..., exists=True, file_okay=True, dir_okay=False),
+    image_path: Path = IMAGE_PATH_ARG,
 ) -> None:
     """Parse receipt image with Gemini-powered parser."""
     configure_logging()
@@ -52,7 +47,9 @@ def main(
     if not result.rows:
         console.print("[yellow]No rows found.[/yellow]")
     else:
-        table = Table(title=f"Extracted Fields ({len(result.rows)} rows)", header_style="bold magenta")
+        table = Table(
+            title=f"Extracted Fields ({len(result.rows)} rows)", header_style="bold magenta"
+        )
         table.add_column("#", justify="right")
         table.add_column("item_name")
         table.add_column("item_count", justify="right")

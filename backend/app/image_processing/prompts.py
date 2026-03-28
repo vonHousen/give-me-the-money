@@ -11,16 +11,21 @@ PROMPT_RECEIPT_PARSER = dedent(f"""
     - The receipt in the main part contains rows each representing single purchased item.
     - The item's section contain columns from which you can extract certain fields:
         - the first column from the left is item names;
-        - the second is the number of instances of that particular item (e.g. 3 x 9,99 => there were 3 instances);
-        - the last (first from the right) is the total cost of all instances of the particular item
+        - the second is the number of instances of that particular item
+          (e.g. 3 x 9,99 => there were 3 instances);
+        - the last (first from the right) is the total cost of all
+          instances of the particular item
             with possible letter appended as a suffix - ignore that letter;
-        - to sum up: 'Napar imbirowy.A 3 x18,00 54,00A' means that there where 3 intances of 'Napar imbirowy' 
-            with a 18,00 price each and the total cost of all these instances is 54,00; 
+        - to sum up: 'Napar imbirowy.A 3 x18,00 54,00A' means that there
+          where 3 intances of 'Napar imbirowy'
+            with a 18,00 price each and the total cost of all these instances is 54,00;
     </hints>
 
 
     <rules>
-    - Process only the receipt part with the individual product listing when looking for individual items.
+    - Process only the receipt part with the individual product listing
+      when looking for individual items.
+    - Exclude totals, subtotals, taxes, tips.
     - Look below the items section for a grand total.
     - Ignore any other taxes, payment method lines, etc.
     - If uncertain, skip the row.
