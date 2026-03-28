@@ -6,7 +6,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from app.image_processing.model import ProcessedReceipt
+from app.image_processing.model import ProcessedReceipt, RestaurantInfo
 from app.image_processing.ocr import response_formats
 from app.image_processing.ocr.exceptions import ImageProcessingParseError
 from app.logging import get_logger
@@ -63,22 +63,24 @@ def to_model_processed_receipt(
     raw_receipt: response_formats.ProcessedReceipt,
     currency_code: str = DEFAULT_CURRENCY_CODE,
 ) -> ProcessedReceipt:
-    parsed = ProcessedReceipt.model_validate(
+    restaurant_info = RestaurantInfo.model_validate(raw_receipt.restaurant_info.model_dump())
+    parsed_receipt_model = ProcessedReceipt.model_validate(
         {
             "rows": [row.model_dump() for row in raw_receipt.rows],
             "currency_code": currency_code,
+            "restaurant_info": restaurant_info.model_dump(),
         },
     )
 
-    if raw_receipt.total_value == parsed.calculated_total:
+    if raw_receipt.total_value == parsed_receipt_model.calculated_total:
         LOGGER.info("✅ success: receipt total matches calculated_total")
     else:
         LOGGER.warning(
             f"❌ total mismatch: raw total_value={raw_receipt.total_value} "
-            f"calculated_total={parsed.calculated_total}",
+            f"calculated_total={parsed_receipt_model.calculated_total}",
         )
 
-    return parsed
+    return parsed_receipt_model
 
 
 def parse_decimal(value: Any) -> Decimal:

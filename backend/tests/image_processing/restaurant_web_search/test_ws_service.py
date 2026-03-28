@@ -1,7 +1,9 @@
+import asyncio
+
 import pytest
 
 from app.image_processing.restaurant_web_search import service
-from app.image_processing.restaurant_web_search.models import RestaurantLookupInfo
+from app.image_processing.restaurant_web_search.models import RestaurantInfo
 
 
 async def _fake_agent_success(*_args, **_kwargs):
@@ -27,7 +29,7 @@ def test_is_web_search_enabled_when_truthy_env_expect_true(monkeypatch: pytest.M
 
 
 def test_enrich_restaurant_from_web_when_missing_data_expect_skipped() -> None:
-    info = RestaurantLookupInfo(restaurant_name=None, restaurant_address=None, nip=None)
+    info = RestaurantInfo(restaurant_name=None, restaurant_address=None, nip=None)
 
     result = service.enrich_restaurant_from_web(info)
 
@@ -39,9 +41,23 @@ def test_enrich_restaurant_from_web_when_agent_success_expect_success(
 ) -> None:
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
     monkeypatch.setattr(service, "_run_web_search_agent", _fake_agent_success)
-    info = RestaurantLookupInfo(restaurant_name="Bistro XYZ", restaurant_address=None, nip=None)
+    info = RestaurantInfo(restaurant_name="Bistro XYZ", restaurant_address=None, nip=None)
 
     result = service.enrich_restaurant_from_web(info)
+
+    assert result.status == "success"
+    assert result.match is not None
+    assert result.match.restaurant_name == "Bistro XYZ"
+
+
+def test_enrich_restaurant_from_web_async_when_agent_success_expect_success(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr(service, "_run_web_search_agent", _fake_agent_success)
+    info = RestaurantInfo(restaurant_name="Bistro XYZ", restaurant_address=None, nip=None)
+
+    result = asyncio.run(service.enrich_restaurant_from_web_async(info))
 
     assert result.status == "success"
     assert result.match is not None
@@ -53,7 +69,7 @@ def test_enrich_restaurant_from_web_when_agent_fails_expect_failed(
 ) -> None:
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
     monkeypatch.setattr(service, "_run_web_search_agent", _fake_agent_failure)
-    info = RestaurantLookupInfo(restaurant_name="Bistro XYZ", restaurant_address=None, nip=None)
+    info = RestaurantInfo(restaurant_name="Bistro XYZ", restaurant_address=None, nip=None)
 
     result = service.enrich_restaurant_from_web(info)
 

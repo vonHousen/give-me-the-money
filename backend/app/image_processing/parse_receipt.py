@@ -8,15 +8,9 @@ from app.image_processing.model import ProcessedReceipt
 from app.image_processing.ocr import response_formats, utils
 from app.image_processing.ocr.exceptions import (
     ImageProcessingConfigError,
-    ImageProcessingError,
     ImageProcessingUpstreamError,
 )
 from app.image_processing.ocr.prompts import build_receipt_prompt
-from app.image_processing.restaurant_web_search import (
-    RestaurantLookupInfo,
-    enrich_restaurant_from_web,
-    is_web_search_enabled,
-)
 from app.logging import get_logger
 
 LOGGER = get_logger(__name__)
@@ -67,17 +61,4 @@ def parse_receipt(img_b64: str, mime_type: str = "image/jpeg") -> ProcessedRecei
     parsed_receipt: response_formats.ProcessedReceipt = utils.coerce_raw_response(response.parsed)
     utils.log_extracted_restaurant_attributes(parsed_receipt)
 
-    if is_web_search_enabled():
-        try:
-            LOGGER.debug("Mapping OCR restaurant_info into web-search lookup model")
-            restaurant_lookup_info = RestaurantLookupInfo.model_validate(
-                parsed_receipt.restaurant_info.model_dump()
-            )
-            LOGGER.debug("Starting restaurant web-search enrichment")
-            _ = enrich_restaurant_from_web(restaurant_lookup_info)
-            LOGGER.debug("Restaurant web-search enrichment finished")
-        except ImageProcessingError:
-            LOGGER.exception("Restaurant web-search enrichment failed!")
-
-    LOGGER.debug("Converting OCR response to final ProcessedReceipt model")
     return utils.to_model_processed_receipt(parsed_receipt)

@@ -40,9 +40,10 @@ just
 Main package: `app/image_processing/`
 
 - `parse_receipt.py`: orchestration layer; calls Gemini OCR flow and returns normalized `ProcessedReceipt`
+- `verify_restaurant_lookup.py`: async restaurant verification helper that enriches extracted `RestaurantInfo`
 - `ocr/`: receipt OCR-focused prompt/schema/utils/exceptions modules
 - `restaurant_web_search/`: ADK web-search agent prompt/schema/utils/models/service for restaurant matching + menu attempt
-- `model.py`: final domain models used by the app (`ReceiptRow`, `ProcessedReceipt`)
+- `model.py`: final domain models used by the app (`ReceiptRow`, `RestaurantInfo`, `ProcessedReceipt`, `EnrichedRestaurantInfo`)
 
 ### Parsing Flow
 
@@ -50,8 +51,10 @@ Main package: `app/image_processing/`
 2. Send image + structured prompt to Gemini.
 3. Validate/coerce Gemini JSON response.
 4. Normalize rows (`item_name`, `item_count`, `total_cost`).
-5. If `RESTAURANT_WEB_SEARCH_ENABLED=true`, run best-effort web enrichment from extracted `restaurant_info` (logs only).
-6. Return `ProcessedReceipt(rows, currency_code)`.
+5. Map extracted OCR restaurant attributes into `ProcessedReceipt.restaurant_info`.
+6. Return `ProcessedReceipt(rows, currency_code, restaurant_info)`.
+
+Restaurant verification is now an explicit async step via `verify_restaurant_lookup_info(...)`.
 
 ## Test `image_processing` With Script
 
@@ -67,6 +70,12 @@ Expected behavior:
 - Prints detected currency separately
 
 You can also run with your own receipt image path.
+
+To run receipt parsing with restaurant verification:
+
+```bash
+uv run --directory backend python scripts/parse_receipt.py data/receipt_rico.jpeg --verify-restaurant
+```
 
 ## Automated Tests
 

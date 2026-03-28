@@ -1,11 +1,11 @@
-from app.image_processing.restaurant_web_search.models import RestaurantLookupInfo
+from app.image_processing.restaurant_web_search.models import RestaurantInfo
 from app.image_processing.restaurant_web_search.prompts import build_restaurant_web_search_prompt
 
 
 def test_build_restaurant_web_search_prompt_when_restaurant_fields_present_expect_embedded() -> (
     None
 ):
-    info = RestaurantLookupInfo(
+    info = RestaurantInfo(
         restaurant_name="Bistro XYZ",
         restaurant_address="Main Street 10, Warsaw",
         nip="1234567890",

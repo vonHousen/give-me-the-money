@@ -8,13 +8,13 @@ from app.image_processing.restaurant_web_search import response_formats as ws_re
 from app.image_processing.restaurant_web_search.exceptions import RestaurantWebSearchParseError
 from app.image_processing.restaurant_web_search.models import (
     MenuItem,
-    RestaurantLookupInfo,
+    RestaurantInfo,
     RestaurantMatch,
     RestaurantWebEnrichment,
 )
 
 
-def has_searchable_restaurant_info(restaurant_info: RestaurantLookupInfo) -> bool:
+def has_searchable_restaurant_info(restaurant_info: RestaurantInfo) -> bool:
     extracted = restaurant_info.serialize_only_extracted()
     return bool(extracted)
 

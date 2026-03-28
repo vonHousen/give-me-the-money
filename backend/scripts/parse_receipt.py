@@ -1,5 +1,7 @@
 from __future__ import annotations
+# ruff: noqa: I001
 
+import asyncio
 import base64
 import mimetypes
 import sys
@@ -16,6 +18,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.image_processing.parse_receipt import parse_receipt  # noqa: E402
+from app.image_processing.verify_restaurant_lookup import verify_restaurant_lookup_info  # noqa: E402
 from app.logging import configure_logging  # noqa: E402
 
 app = typer.Typer(add_completion=False, help="Parse a receipt image and display parsed line items.")
@@ -35,6 +38,11 @@ def _format_money(value: Decimal) -> str:
 @app.command()
 def main(
     image_path: Path = IMAGE_PATH_ARG,
+    verify_restaurant: bool = typer.Option(
+        False,
+        "--verify-restaurant",
+        help="Run async restaurant verification on extracted restaurant info.",
+    ),
 ) -> None:
     """Parse receipt image with Gemini-powered parser."""
     load_dotenv(PROJECT_ROOT / ".env")
@@ -71,6 +79,25 @@ def main(
             )
 
         console.print(table)
+
+    if verify_restaurant:
+        verified = asyncio.run(verify_restaurant_lookup_info(result.restaurant_info))
+        console.rule("[bold green]Restaurant Verification Result[/bold green]")
+        console.print(f"[bold]NIP:[/bold] {verified.nip or '-'}")
+        console.print(f"[bold]Restaurant name:[/bold] {verified.restaurant_name or '-'}")
+        console.print(f"[bold]Restaurant address:[/bold] {verified.restaurant_address or '-'}")
+        console.print(f"[bold]Website:[/bold] {verified.website_url or '-'}")
+        console.print(f"[bold]Evidence URLs:[/bold] {len(verified.evidence_urls)}")
+        for url in verified.evidence_urls:
+            console.print(f"  - {url}")
+        console.print(f"[bold]Menu items:[/bold] {len(verified.menu_items)}")
+        for item in verified.menu_items:
+            price = _format_money(item.item_price) if item.item_price is not None else "-"
+            currency = item.currency_code or "-"
+            console.print(f"  - {item.item_name}: {price} {currency}")
+        console.print(f"[bold]Menu source URLs:[/bold] {len(verified.menu_source_urls)}")
+        for url in verified.menu_source_urls:
+            console.print(f"  - {url}")
 
 
 if __name__ == "__main__":

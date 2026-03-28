@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import Any
 
 from pydantic import BaseModel, Field, computed_field, field_validator
 
@@ -9,9 +10,25 @@ class ReceiptRow(BaseModel):
     total_cost: Decimal = Field(ge=0)
 
 
+class RestaurantInfo(BaseModel):
+    nip: str | None = None
+    restaurant_address: str | None = None
+    restaurant_name: str | None = None
+
+    def serialize_only_extracted(self) -> dict[str, Any]:
+        return self.model_dump(exclude_none=True)
+
+
+class MenuItem(BaseModel):
+    item_name: str = Field(min_length=1)
+    item_price: Decimal | None = Field(default=None, ge=0)
+    currency_code: str | None = Field(default=None, min_length=3, max_length=3)
+
+
 class ProcessedReceipt(BaseModel):
     rows: list[ReceiptRow]
     currency_code: str = Field(min_length=3, max_length=3)
+    restaurant_info: RestaurantInfo = Field(default_factory=RestaurantInfo)
 
     @computed_field
     @property
@@ -22,3 +39,10 @@ class ProcessedReceipt(BaseModel):
     @classmethod
     def normalize_currency_code(cls, value: str) -> str:
         return value.strip().upper()
+
+
+class EnrichedRestaurantInfo(RestaurantInfo):
+    website_url: str | None = None
+    evidence_urls: list[str] = Field(default_factory=list)
+    menu_items: list[MenuItem] = Field(default_factory=list)
+    menu_source_urls: list[str] = Field(default_factory=list)

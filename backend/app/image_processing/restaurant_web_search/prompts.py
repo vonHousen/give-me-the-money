@@ -1,10 +1,10 @@
 from textwrap import dedent
 
-from app.image_processing.restaurant_web_search.models import RestaurantLookupInfo
+from app.image_processing.restaurant_web_search.models import RestaurantInfo
 from app.image_processing.restaurant_web_search.response_formats import RestaurantWebSearchResponse
 
 
-def build_restaurant_web_search_prompt(restaurant_info: RestaurantLookupInfo) -> str:
+def build_restaurant_web_search_prompt(restaurant_info: RestaurantInfo) -> str:
     raw_fields = restaurant_info.serialize_only_extracted()
     fields_hint = "\n".join(f"- {key}: {value}" for key, value in raw_fields.items())
 

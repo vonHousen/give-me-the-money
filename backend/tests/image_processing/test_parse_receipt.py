@@ -8,7 +8,6 @@ import pytest
 
 from app.image_processing.ocr.exceptions import (
     ImageProcessingConfigError,
-    ImageProcessingError,
     ImageProcessingParseError,
     ImageProcessingUpstreamError,
 )
@@ -117,6 +116,9 @@ def test_parse_receipt_when_raw_base64_input_expect_processed_receipt(
     assert len(result.rows) == 1
     assert result.rows[0].item_name == "Tomato"
     assert result.calculated_total == Decimal("12.50")
+    assert result.restaurant_info.restaurant_name is None
+    assert result.restaurant_info.restaurant_address is None
+    assert result.restaurant_info.nip is None
     assert capture["api_key"] == "test-key"
     assert capture["request"]["contents"][0]["mime_type"] == "image/jpeg"
 
@@ -291,11 +293,10 @@ def test_parse_receipt_when_restaurant_attributes_present_expect_logged(
     assert ast.literal_eval(log_calls[0][len(prefix) :]) == extracted
 
 
-def test_parse_receipt_when_web_search_enabled_expect_enrichment_called(
+def test_parse_receipt_when_restaurant_attributes_present_expect_restaurant_info_mapped(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
-    monkeypatch.setenv("RESTAURANT_WEB_SEARCH_ENABLED", "true")
     payload = base64.b64encode(b"fake image bytes").decode("utf-8")
     capture: dict[str, Any] = {}
     parsed = ProcessedReceipt.model_validate(
@@ -310,47 +311,8 @@ def test_parse_receipt_when_web_search_enabled_expect_enrichment_called(
         },
     )
     _install_fake_genai(monkeypatch, parsed=parsed, capture=capture)
-    enrichment_calls: list[Any] = []
-
-    def _fake_enrich(restaurant_info: Any) -> None:
-        enrichment_calls.append(restaurant_info)
-        return None
-
-    monkeypatch.setattr(parse_receipt_module, "enrich_restaurant_from_web", _fake_enrich)
-    monkeypatch.setattr(parse_receipt_module, "is_web_search_enabled", lambda: True)
-
-    _ = parse_receipt(payload)
-
-    assert len(enrichment_calls) == 1
-    assert enrichment_calls[0].restaurant_name == "Bistro XYZ"
-
-
-def test_parse_receipt_when_enrichment_fails_expect_parse_still_succeeds(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
-    monkeypatch.setenv("RESTAURANT_WEB_SEARCH_ENABLED", "true")
-    payload = base64.b64encode(b"fake image bytes").decode("utf-8")
-    capture: dict[str, Any] = {}
-    parsed = ProcessedReceipt.model_validate(
-        {
-            "rows": [{"item_name": "Soup", "item_count": 1, "total_cost": "12.00"}],
-            "total_value": "12.00",
-            "restaurant_info": {
-                "nip": None,
-                "restaurant_name": "Bistro XYZ",
-                "restaurant_address": "Main Street 10, Warsaw",
-            },
-        },
-    )
-    _install_fake_genai(monkeypatch, parsed=parsed, capture=capture)
-
-    def _raise_enrichment_error(_restaurant_info: Any) -> None:
-        raise ImageProcessingError("enrichment failed")
-
-    monkeypatch.setattr(parse_receipt_module, "enrich_restaurant_from_web", _raise_enrichment_error)
-    monkeypatch.setattr(parse_receipt_module, "is_web_search_enabled", lambda: True)
-
     result = parse_receipt(payload)
 
-    assert len(result.rows) == 1
+    assert result.restaurant_info.restaurant_name == "Bistro XYZ"
+    assert result.restaurant_info.restaurant_address == "Main Street 10, Warsaw"
+    assert result.restaurant_info.nip is None

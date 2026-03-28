@@ -10,7 +10,7 @@ from app.image_processing.restaurant_web_search.exceptions import (
     RestaurantWebSearchUpstreamError,
 )
 from app.image_processing.restaurant_web_search.models import (
-    RestaurantLookupInfo,
+    RestaurantInfo,
     RestaurantWebEnrichment,
 )
 from app.image_processing.restaurant_web_search.prompts import build_restaurant_web_search_prompt
@@ -31,7 +31,13 @@ def is_web_search_enabled() -> bool:
     return is_enabled
 
 
-def enrich_restaurant_from_web(restaurant_info: RestaurantLookupInfo) -> RestaurantWebEnrichment:
+def enrich_restaurant_from_web(restaurant_info: RestaurantInfo) -> RestaurantWebEnrichment:
+    return asyncio.run(enrich_restaurant_from_web_async(restaurant_info))
+
+
+async def enrich_restaurant_from_web_async(
+    restaurant_info: RestaurantInfo,
+) -> RestaurantWebEnrichment:
     LOGGER.info(f"Restaurant web search lookup input: {restaurant_info.serialize_only_extracted()}")
 
     if not utils.has_searchable_restaurant_info(restaurant_info):
@@ -56,10 +62,8 @@ def enrich_restaurant_from_web(restaurant_info: RestaurantLookupInfo) -> Restaur
     started = time.perf_counter()
     try:
         LOGGER.debug("Running ADK web-search agent")
-        raw_response = asyncio.run(
-            asyncio.wait_for(
-                _run_web_search_agent(prompt=prompt, model_name=model_name), timeout_seconds
-            )
+        raw_response = await asyncio.wait_for(
+            _run_web_search_agent(prompt=prompt, model_name=model_name), timeout_seconds
         )
         LOGGER.debug(f"ADK web-search agent returned payload type: {type(raw_response).__name__}")
         parsed = utils.coerce_web_search_response(raw_response)
