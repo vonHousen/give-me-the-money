@@ -32,25 +32,17 @@ export function SwipeCard({ onSwipe, children, className }: SwipeCardProps) {
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerCancel}
       >
-        {/* Accept overlay */}
+        {/* Accept tint */}
         <div
-          className="absolute inset-0 bg-ds-secondary/20 rounded-xl z-10 flex items-start justify-start p-6 pointer-events-none"
+          className="absolute inset-0 bg-ds-secondary/20 rounded-xl z-10 pointer-events-none"
           style={{ opacity: acceptOpacity }}
-        >
-          <span className="text-ds-secondary font-headline font-extrabold text-3xl border-2 border-ds-secondary rounded-lg px-3 py-1 rotate-[-15deg]">
-            KEEP
-          </span>
-        </div>
+        />
 
-        {/* Decline overlay */}
+        {/* Decline tint */}
         <div
-          className="absolute inset-0 bg-ds-tertiary/20 rounded-xl z-10 flex items-start justify-end p-6 pointer-events-none"
+          className="absolute inset-0 bg-ds-tertiary/20 rounded-xl z-10 pointer-events-none"
           style={{ opacity: declineOpacity }}
-        >
-          <span className="text-ds-tertiary font-headline font-extrabold text-3xl border-2 border-ds-tertiary rounded-lg px-3 py-1 rotate-[15deg]">
-            SKIP
-          </span>
-        </div>
+        />
 
         {children}
       </div>
