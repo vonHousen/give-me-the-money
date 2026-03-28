@@ -47,6 +47,7 @@ def main(
     console.rule("[bold cyan]Receipt Parse Result[/bold cyan]")
     console.print(f"[bold]File:[/bold] {image_path}")
     console.print(f"[bold]Currency:[/bold] {result.currency_code}")
+    console.print(f"[bold]Calculated total:[/bold] {_format_money(result.calculated_total)}")
 
     if not result.rows:
         console.print("[yellow]No rows found.[/yellow]")
