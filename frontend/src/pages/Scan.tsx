@@ -5,11 +5,11 @@ import { TopAppBar } from '@/components/TopAppBar'
 import { PageLayout } from '@/components/PageLayout'
 import { Button } from '@/components/ui/button'
 import { blobToBase64Payload } from '@/lib/receiptScanEncoding'
-import { submitReceiptScan } from '@/lib/receiptScanApi'
-import type { ReceiptScanResponse } from '@/lib/receiptScanApi'
+import { analyzeReceipt } from '@/lib/receiptScanApi'
+import type { AnalyzeResponse } from '@/lib/receiptScanApi'
 
 export type ReviewLocationState = {
-  receiptScan?: ReceiptScanResponse
+  analyzeResult?: AnalyzeResponse
 }
 
 /**
@@ -76,8 +76,8 @@ export default function Scan() {
     setError(null)
     try {
       const payload = await blobToBase64Payload(selectedFile)
-      const res = await submitReceiptScan(payload)
-      navigate('/review', { state: { receiptScan: res } satisfies ReviewLocationState })
+      const res = await analyzeReceipt(payload)
+      navigate('/review', { state: { analyzeResult: res } satisfies ReviewLocationState })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')
     } finally {

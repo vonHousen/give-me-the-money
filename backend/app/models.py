@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class ItemBase(BaseModel):
     name: str
     price: float
+    count: int = 1
 
 
 class Item(ItemBase):
@@ -15,6 +16,8 @@ class Item(ItemBase):
 class User(BaseModel):
     id: UUID
     name: str
+    is_owner: bool = False
+    swipe_finished: bool = False
 
 
 class Settlement(BaseModel):
@@ -23,3 +26,4 @@ class Settlement(BaseModel):
     items: list[Item]
     users: list[User]
     assignments: dict[str, list[str]]  # user id -> list of item ids
+    claims: dict[str, dict[str, int]] = {}  # user id -> {item id -> quantity}

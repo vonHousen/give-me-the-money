@@ -6,12 +6,18 @@ import {
   mockJoinSettlement,
   mockMarkSwipeComplete,
   mockRecordItemClaim,
-  type SettlementStatusParticipant,
 } from '@/lib/settlementMockStore'
 import {
-  normalizeSettlementItem,
+  backendFinishToSummary,
+  backendSettlementToResponse,
+  backendStatusToParticipants,
+  type BackendFinishResponseWire,
+  type BackendJoinResponseWire,
+  type BackendSettlementWire,
+  type BackendStatusResponseWire,
   type CreateSettlementRequest,
   type SettlementResponse,
+  type SettlementStatusParticipant,
   type SettlementSummaryPayload,
 } from '@/lib/settlementTypes'
 
@@ -19,19 +25,18 @@ export type {
   CreateSettlementRequest,
   SettlementItemWire,
   SettlementResponse,
+  SettlementStatusParticipant,
   SettlementSummaryLine,
   SettlementSummaryPayload,
   SettlementSummaryPerson,
 } from '@/lib/settlementTypes'
 export { normalizeSettlementItem } from '@/lib/settlementTypes'
 
-export type { SettlementStatusParticipant } from '@/lib/settlementMockStore'
-
 export { resetSettlementMockStore } from '@/lib/settlementMockStore'
 
 const MOCK_DELAY_MS = 300
 
-/** Empty or unset → use built-in mock (no HTTP). Base URL without trailing slash; POST goes to `{base}/settlements`. */
+/** Empty or unset -> use built-in mock (no HTTP). Base URL without trailing slash. */
 export function getSettlementApiBaseUrl(): string | undefined {
   const raw = import.meta.env.VITE_SETTLEMENT_API_URL
   if (typeof raw !== 'string') return undefined
@@ -42,12 +47,37 @@ export function getSettlementApiBaseUrl(): string | undefined {
 export async function createSettlement(
   body: CreateSettlementRequest,
 ): Promise<SettlementResponse> {
+  const ownerName = body.ownerName ?? 'Owner'
   const base = getSettlementApiBaseUrl()
   if (!base) {
     await delay()
-    return mockCreateSettlement(body)
+    const wire = mockCreateSettlement({
+      name: body.name,
+      items: body.items.map((i) => ({ name: i.name, price: i.price, count: i.quantity })),
+      owner_name: ownerName,
+    })
+    return backendSettlementToResponse(wire)
   }
-  return postSettlement(base, body)
+  const url = `${base}/settlements`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: body.name,
+      items: body.items.map((i) => ({ name: i.name, price: i.price, count: i.quantity })),
+      owner_name: ownerName,
+    }),
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(
+      text
+        ? `Create settlement failed (${res.status}): ${text}`
+        : `Create settlement failed (${res.status})`,
+    )
+  }
+  const wire = (await res.json()) as BackendSettlementWire
+  return backendSettlementToResponse(wire)
 }
 
 export async function joinSettlement(
@@ -57,19 +87,27 @@ export async function joinSettlement(
   const base = getSettlementApiBaseUrl()
   if (!base) {
     await delay()
-    return mockJoinSettlement(settlementId, name)
+    const wire = mockJoinSettlement(settlementId, name)
+    return {
+      participantId: wire.participant_id,
+      settlement: backendSettlementToResponse(wire.settlement),
+    }
   }
   const url = `${base}/settlements/${encodeURIComponent(settlementId)}/join`
   const res = await fetch(url, {
-    method: 'POST',
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ user_name: name, item_ids: [] }),
   })
   if (!res.ok) {
     const text = await res.text().catch(() => '')
     throw new Error(text ? `Join failed (${res.status}): ${text}` : `Join failed (${res.status})`)
   }
-  return res.json() as Promise<{ participantId: string; settlement: SettlementResponse }>
+  const wire = (await res.json()) as BackendJoinResponseWire
+  return {
+    participantId: wire.participant_id,
+    settlement: backendSettlementToResponse(wire.settlement),
+  }
 }
 
 export async function getSettlementStatus(settlementId: string): Promise<{
@@ -78,7 +116,8 @@ export async function getSettlementStatus(settlementId: string): Promise<{
   const base = getSettlementApiBaseUrl()
   if (!base) {
     await delay()
-    return mockGetSettlementStatus(settlementId)
+    const wire = mockGetSettlementStatus(settlementId)
+    return { participants: backendStatusToParticipants(wire) }
   }
   const url = `${base}/settlements/${encodeURIComponent(settlementId)}/status`
   const res = await fetch(url)
@@ -88,7 +127,8 @@ export async function getSettlementStatus(settlementId: string): Promise<{
       text ? `Status failed (${res.status}): ${text}` : `Status failed (${res.status})`,
     )
   }
-  return res.json() as Promise<{ participants: SettlementStatusParticipant[] }>
+  const wire = (await res.json()) as BackendStatusResponseWire
+  return { participants: backendStatusToParticipants(wire) }
 }
 
 export async function recordItemClaim(
@@ -107,7 +147,11 @@ export async function recordItemClaim(
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ participantId, itemId, quantityClaimed }),
+    body: JSON.stringify({
+      user_id: participantId,
+      item_id: itemId,
+      quantity_claimed: quantityClaimed,
+    }),
   })
   if (!res.ok) {
     const text = await res.text().catch(() => '')
@@ -128,7 +172,7 @@ export async function markSwipeComplete(settlementId: string, participantId: str
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ participantId }),
+    body: JSON.stringify({ user_id: participantId }),
   })
   if (!res.ok) {
     const text = await res.text().catch(() => '')
@@ -144,7 +188,8 @@ export async function finishSettlement(settlementId: string): Promise<{
   const base = getSettlementApiBaseUrl()
   if (!base) {
     await delay()
-    return mockFinishSettlement(settlementId)
+    const wire = mockFinishSettlement(settlementId)
+    return { summary: backendFinishToSummary(wire) }
   }
   const url = `${base}/settlements/${encodeURIComponent(settlementId)}/finish`
   const res = await fetch(url, { method: 'POST' })
@@ -154,7 +199,8 @@ export async function finishSettlement(settlementId: string): Promise<{
       text ? `Finish failed (${res.status}): ${text}` : `Finish failed (${res.status})`,
     )
   }
-  return res.json() as Promise<{ summary: SettlementSummaryPayload }>
+  const wire = (await res.json()) as BackendFinishResponseWire
+  return { summary: backendFinishToSummary(wire) }
 }
 
 /** For swipe UI: load items from mock store (mock mode) or GET settlement. */
@@ -162,55 +208,21 @@ export async function getSettlementForSwipe(settlementId: string): Promise<Settl
   const base = getSettlementApiBaseUrl()
   if (!base) {
     await delay()
-    const rec = mockGetSettlementRecord(settlementId)
-    if (!rec) {
+    const wire = mockGetSettlementRecord(settlementId)
+    if (!wire) {
       return null
     }
-    return {
-      id: rec.id,
-      name: rec.name,
-      items: rec.items.map((i) => normalizeSettlementItem(i)),
-      users: rec.participants.map((p) => ({ id: p.id, name: p.name })),
-      assignments: { ...rec.assignments },
-    }
+    return backendSettlementToResponse(wire)
   }
   const url = `${base}/settlements/${encodeURIComponent(settlementId)}`
   const res = await fetch(url)
   if (!res.ok) {
     return null
   }
-  const data = (await res.json()) as SettlementResponse
-  return {
-    ...data,
-    items: data.items.map((i) => normalizeSettlementItem(i)),
-  }
+  const wire = (await res.json()) as BackendSettlementWire
+  return backendSettlementToResponse(wire)
 }
 
 async function delay(): Promise<void> {
   await new Promise((r) => setTimeout(r, MOCK_DELAY_MS))
-}
-
-async function postSettlement(
-  base: string,
-  body: CreateSettlementRequest,
-): Promise<SettlementResponse> {
-  const url = `${base}/settlements`
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-  if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(
-      text
-        ? `Create settlement failed (${res.status}): ${text}`
-        : `Create settlement failed (${res.status})`,
-    )
-  }
-  const data = (await res.json()) as SettlementResponse
-  return {
-    ...data,
-    items: data.items.map((i) => normalizeSettlementItem(i)),
-  }
 }

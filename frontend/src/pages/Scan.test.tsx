@@ -17,10 +17,10 @@ function stubMatchMedia(coarseMatches: boolean) {
   )
 }
 
-const mockSubmitReceiptScan = vi.fn()
+const mockAnalyzeReceipt = vi.fn()
 
 vi.mock('@/lib/receiptScanApi', () => ({
-  submitReceiptScan: (...args: unknown[]) => mockSubmitReceiptScan(...args),
+  analyzeReceipt: (...args: unknown[]) => mockAnalyzeReceipt(...args),
 }))
 
 function ReviewStub() {
@@ -29,10 +29,11 @@ function ReviewStub() {
 
 describe('Scan', () => {
   beforeEach(() => {
-    mockSubmitReceiptScan.mockReset()
-    mockSubmitReceiptScan.mockResolvedValue({
-      receipt_id: 'test-receipt-id',
-      status: 'accepted',
+    mockAnalyzeReceipt.mockReset()
+    mockAnalyzeReceipt.mockResolvedValue({
+      name: 'Test Restaurant',
+      currency_code: 'USD',
+      items: [{ name: 'Pizza', price: 12.5, count: 1 }],
     })
     stubMatchMedia(false)
   })
@@ -87,7 +88,7 @@ describe('Scan', () => {
 
     await user.click(analyze)
 
-    expect(mockSubmitReceiptScan).toHaveBeenCalledWith(
+    expect(mockAnalyzeReceipt).toHaveBeenCalledWith(
       expect.objectContaining({
         mime_type: 'image/png',
         image_base64: expect.any(String),

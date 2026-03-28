@@ -8,6 +8,7 @@ import { createSettlement } from '@/lib/settlementApi'
 import { markSettlementOwnerSession } from '@/lib/settlementSession'
 import { randomUuid, roundMoney } from '@/lib/utils'
 import type { ReviewLocationState } from '@/pages/Scan'
+import type { AnalyzeItemWire } from '@/lib/receiptScanApi'
 
 export type ReviewLine = {
   id: string
@@ -24,6 +25,15 @@ const SEED_ROWS: ReviewLine[] = [
   { id: '00000000-0000-0000-0000-000000000005', name: 'Service Charge (10%)', unitPrice: 4.3, quantity: 1 },
 ]
 
+function analyzeItemsToRows(items: AnalyzeItemWire[]): ReviewLine[] {
+  return items.map((item) => ({
+    id: randomUuid(),
+    name: item.name,
+    unitPrice: roundMoney(item.count > 0 ? item.price / item.count : item.price),
+    quantity: item.count,
+  }))
+}
+
 function lineSubtotal(row: ReviewLine): number {
   return roundMoney(row.unitPrice * row.quantity)
 }
@@ -34,11 +44,15 @@ export default function Review() {
   const receiptState = location.state as ReviewLocationState | null
 
   const [settlementName, setSettlementName] = useState(() =>
-    receiptState?.receiptScan?.receipt_id
-      ? `Receipt ${receiptState.receiptScan.receipt_id.slice(0, 8)}…`
-      : 'Receipt',
+    receiptState?.analyzeResult?.name ?? 'Receipt',
   )
-  const [rows, setRows] = useState<ReviewLine[]>(() => SEED_ROWS.map((r) => ({ ...r })))
+  const [rows, setRows] = useState<ReviewLine[]>(() => {
+    const analyzed = receiptState?.analyzeResult?.items
+    if (analyzed && analyzed.length > 0) {
+      return analyzeItemsToRows(analyzed)
+    }
+    return SEED_ROWS.map((r) => ({ ...r }))
+  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

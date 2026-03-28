@@ -18,3 +18,5 @@ services:
       timeout: 3s
       retries: 5
       start_period: 5s
+    env_file: ./backend/.env
+
