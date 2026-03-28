@@ -28,8 +28,14 @@ class ProcessedReceipt(BaseModel):
     STRUCTURED_OUTPUT_HINT: ClassVar[str] = dedent("""
         Return JSON only with this shape:
         {
-          "rows": [{"item_name": "string", "item_count": 1, "total_cost": "12.34"}]
+          "rows": [{"item_name": "string", "item_count": 1, "total_cost": "12.34"}],
+          "total_value": "12.34"
         }
     """).strip()
 
     rows: list[ReceiptRow] = Field(default_factory=list)
+    total_value: Decimal | None = Field(
+        default=None,
+        ge=0,
+        description="The grand total value for the whole receipt.",
+    )

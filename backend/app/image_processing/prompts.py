@@ -20,7 +20,8 @@ PROMPT_RECEIPT_PARSER = dedent(f"""
 
 
     <rules>
-    - Process only the receipt part with the individual product listing.
+    - Process only the receipt part with the individual product listing when looking for individual items.
+    - Look below the items section for a grand total.
     - Ignore any other taxes, payment method lines, etc.
     - If uncertain, skip the row.
     <rules/>
