@@ -13,6 +13,7 @@ from app.image_processing.ocr.exceptions import (
 )
 from app.image_processing.ocr.prompts import build_receipt_prompt
 from app.image_processing.restaurant_web_search import (
+    RestaurantLookupInfo,
     enrich_restaurant_from_web,
     is_web_search_enabled,
 )
@@ -32,16 +33,19 @@ def parse_receipt(img_b64: str, mime_type: str = "image/jpeg") -> ProcessedRecei
     Returns:
         A processed receipt containing the items purchased and the currency code.
     """
+    LOGGER.debug("Starting receipt parsing pipeline")
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise ImageProcessingConfigError("GEMINI_API_KEY is required")
 
     model_name = os.getenv("GEMINI_MODEL", utils.DEFAULT_GEMINI_MODEL)
+    LOGGER.debug(f"Using OCR model: {model_name}")
     image_bytes, resolved_mime = utils.decode_image(img_b64=img_b64, mime_type=mime_type)
 
     client = genai.Client(api_key=api_key)
 
     llm_call_started = time.perf_counter()
+    LOGGER.debug("Sending receipt image + prompt to Gemini OCR model")
     try:
         response = client.models.generate_content(
             model=model_name,
@@ -58,15 +62,22 @@ def parse_receipt(img_b64: str, mime_type: str = "image/jpeg") -> ProcessedRecei
         raise ImageProcessingUpstreamError("gemini request failed") from exc
 
     llm_call_elapsed = time.perf_counter() - llm_call_started
-    LOGGER.debug("LLM call elapsed time: %.3fs", llm_call_elapsed)
+    LOGGER.debug(f"LLM call elapsed time: {llm_call_elapsed:.3f}s")
 
     parsed_receipt: response_formats.ProcessedReceipt = utils.coerce_raw_response(response.parsed)
     utils.log_extracted_restaurant_attributes(parsed_receipt)
 
     if is_web_search_enabled():
         try:
-            _ = enrich_restaurant_from_web(parsed_receipt.restaurant_info)
-        except ImageProcessingError as exc:
-            LOGGER.warning("Restaurant web-search enrichment failed: %s", exc)
+            LOGGER.debug("Mapping OCR restaurant_info into web-search lookup model")
+            restaurant_lookup_info = RestaurantLookupInfo.model_validate(
+                parsed_receipt.restaurant_info.model_dump()
+            )
+            LOGGER.debug("Starting restaurant web-search enrichment")
+            _ = enrich_restaurant_from_web(restaurant_lookup_info)
+            LOGGER.debug("Restaurant web-search enrichment finished")
+        except ImageProcessingError:
+            LOGGER.exception("Restaurant web-search enrichment failed!")
 
+    LOGGER.debug("Converting OCR response to final ProcessedReceipt model")
     return utils.to_model_processed_receipt(parsed_receipt)

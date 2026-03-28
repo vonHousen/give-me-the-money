@@ -7,6 +7,7 @@ from decimal import Decimal
 from pathlib import Path
 
 import typer
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.table import Table
 
@@ -36,6 +37,7 @@ def main(
     image_path: Path = IMAGE_PATH_ARG,
 ) -> None:
     """Parse receipt image with Gemini-powered parser."""
+    load_dotenv(PROJECT_ROOT / ".env")
     configure_logging()
 
     image_bytes = image_path.read_bytes()

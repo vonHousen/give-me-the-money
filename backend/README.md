@@ -23,6 +23,10 @@ Set your key in `.env`:
 GEMINI_API_KEY=your_key_here
 # optional override
 GEMINI_MODEL=gemini-3.1-flash-lite-preview
+# optional web-search enrichment (best-effort, internal logs only)
+RESTAURANT_WEB_SEARCH_ENABLED=false
+RESTAURANT_WEB_SEARCH_MODEL=gemini-2.5-flash
+RESTAURANT_WEB_SEARCH_TIMEOUT_SECONDS=20
 ```
 
 From repo root, available helper commands are in `justfile`:
@@ -35,12 +39,10 @@ just
 
 Main package: `app/image_processing/`
 
-- `parse_receipt.py`: orchestration layer; calls Gemini with image + prompt and returns normalized `ProcessedReceipt`
-- `prompts.py`: receipt extraction prompt and output rules
-- `response_formats.py`: structured output schema sent to Gemini (`rows` shape)
-- `utils.py`: base64/data-url decode, schema coercion, decimal normalization, row normalization
+- `parse_receipt.py`: orchestration layer; calls Gemini OCR flow and returns normalized `ProcessedReceipt`
+- `ocr/`: receipt OCR-focused prompt/schema/utils/exceptions modules
+- `restaurant_web_search/`: ADK web-search agent prompt/schema/utils/models/service for restaurant matching + menu attempt
 - `model.py`: final domain models used by the app (`ReceiptRow`, `ProcessedReceipt`)
-- `exceptions.py`: typed errors for config/parse/upstream failures
 
 ### Parsing Flow
 
@@ -48,7 +50,8 @@ Main package: `app/image_processing/`
 2. Send image + structured prompt to Gemini.
 3. Validate/coerce Gemini JSON response.
 4. Normalize rows (`item_name`, `item_count`, `total_cost`).
-5. Return `ProcessedReceipt(rows, currency_code)`.
+5. If `RESTAURANT_WEB_SEARCH_ENABLED=true`, run best-effort web enrichment from extracted `restaurant_info` (logs only).
+6. Return `ProcessedReceipt(rows, currency_code)`.
 
 ## Test `image_processing` With Script
 
