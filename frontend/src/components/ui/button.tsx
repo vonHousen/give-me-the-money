@@ -57,4 +57,6 @@ function Button({
   )
 }
 
+// CVA variants are consumed by other components; colocated export matches shadcn pattern.
+// eslint-disable-next-line react-refresh/only-export-components -- buttonVariants + Button
 export { Button, buttonVariants }

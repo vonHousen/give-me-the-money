@@ -27,6 +27,7 @@ App consisting of:
 - Docker + Docker Compose plugin
 - `just` (command runner)
 - `curl` (for health check command)
+- [Bun](https://bun.sh/) (for frontend lint/test hooks in pre-commit)
 
 ## Pre-commit Hooks
 
@@ -34,6 +35,7 @@ Configured in `.pre-commit-config.yaml` with:
 - basic hygiene checks (`yaml`, `toml`, EOF, trailing whitespace, merge conflicts)
 - `ruff` linting (with auto-fix) for `backend/*.py`
 - `ruff format` for `backend/*.py`
+- `bun run lint` and `bun run test` in `frontend/` when files under `frontend/` change
 
 Run manually:
 

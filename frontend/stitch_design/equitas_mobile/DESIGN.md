@@ -1,19 +1,19 @@
 # Design System Strategy: The Fluid Ledger
 
 ## 1. Overview & Creative North Star
-The Creative North Star for this design system is **"The Invisible Assistant."** 
+The Creative North Star for this design system is **"The Invisible Assistant."**
 
-In the high-friction world of splitting bills and managing debts, the UI must feel like a calming, high-end editorial experience rather than a spreadsheet. We move beyond "Standard Minimal" by embracing a **Soft-Modernist** aesthetic. This means breaking the rigid, boxed-in layouts of traditional fintech. We use intentional asymmetry, generous whitespace (the "Air" principle), and overlapping depth to make the app feel tactile and premium. 
+In the high-friction world of splitting bills and managing debts, the UI must feel like a calming, high-end editorial experience rather than a spreadsheet. We move beyond "Standard Minimal" by embracing a **Soft-Modernist** aesthetic. This means breaking the rigid, boxed-in layouts of traditional fintech. We use intentional asymmetry, generous whitespace (the "Air" principle), and overlapping depth to make the app feel tactile and premium.
 
 This system rejects the "template" look. We do not use borders to define containers; we use light and shadow to define existence. The goal is a digital environment that feels as effortless as a conversation between friends.
 
 ---
 
 ## 2. Colors & Atmospheric Depth
-Our palette is anchored in a sophisticated Teal (`primary: #006b5f`) and supported by organic, earthy neutrals. 
+Our palette is anchored in a sophisticated Teal (`primary: #006b5f`) and supported by organic, earthy neutrals.
 
 ### The "No-Line" Rule
-**Strict Mandate:** Designers are prohibited from using 1px solid borders for sectioning or grouping. 
+**Strict Mandate:** Designers are prohibited from using 1px solid borders for sectioning or grouping.
 Boundaries must be defined solely through background color shifts. A `surface-container-low` (#f1f4f5) section sitting on a `surface` (#f8f9fa) background provides all the separation a modern eye needs. This creates a "seamless" interface that feels like a single, continuous piece of fine paper.
 
 ### Surface Hierarchy & Nesting
@@ -23,7 +23,7 @@ Treat the UI as a series of physical layers. Use the surface-container tiers to 
 *   **Elevated Elements:** `surface-container-lowest` (#ffffff) for cards to provide "pop" against the off-white base.
 
 ### The "Glass & Gradient" Rule
-To elevate the "Split" action, use **Glassmorphism**. Floating action buttons or navigation bars should use semi-transparent versions of `surface` with a 20px-40px backdrop blur. 
+To elevate the "Split" action, use **Glassmorphism**. Floating action buttons or navigation bars should use semi-transparent versions of `surface` with a 20px-40px backdrop blur.
 *   **Signature Textures:** For main CTA buttons or high-level summary cards, use a subtle linear gradient from `primary` (#006b5f) to `primary-dim` (#005e53) at a 135-degree angle. This adds "soul" and a tactile, curved feel that flat hex codes lack.
 
 ---
@@ -57,7 +57,7 @@ Traditional shadows are a crutch. This system uses **Tonal Layering** to convey 
 ### Swipe Interaction Cues (The Interaction Signature)
 Since this is a bill-splitting app, "Yes/No" or "Settle/Remind" actions are driven by swipes.
 *   **Right Swipe (Approve/Settle):** Reveal a `secondary` (#1c6d25) background with an icon.
-*   **Left Swipe (Reject/Decline):** Reveal a `tertiary` (#ba1e21) background. 
+*   **Left Swipe (Reject/Decline):** Reveal a `tertiary` (#ba1e21) background.
 *   *Note:* Use a 15% opacity tint of these colors for the track, but 100% for the icon to maintain the "airy" feel.
 
 ### Input Fields
