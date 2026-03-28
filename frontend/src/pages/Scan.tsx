@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Camera, Upload, Lightbulb } from 'lucide-react'
-import { TopAppBar } from '@/components/TopAppBar'
 import { PageLayout } from '@/components/PageLayout'
 import { Button } from '@/components/ui/button'
 import { usePreferCameraCapture } from '@/hooks/usePreferCameraCapture'
@@ -95,7 +94,6 @@ export default function Scan() {
         onChange={onFileChange}
       />
 
-      <TopAppBar />
       <PageLayout className="flex flex-col gap-6">
         <div className="space-y-1">
           <h2 className="font-headline font-extrabold text-3xl text-ds-on-surface tracking-tight leading-tight">

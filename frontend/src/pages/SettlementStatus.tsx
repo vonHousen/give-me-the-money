@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { TopAppBar } from '@/components/TopAppBar'
 import { PageLayout } from '@/components/PageLayout'
 import { Button } from '@/components/ui/button'
 import { finishSettlement, getSettlementStatus } from '@/lib/settlementApi'
@@ -73,7 +72,6 @@ export default function SettlementStatus() {
 
   return (
     <div className="min-h-screen">
-      <TopAppBar />
       <PageLayout className="space-y-6">
         <div className="space-y-1">
           <h2 className="font-headline font-extrabold text-2xl text-ds-on-surface">Settlement status</h2>

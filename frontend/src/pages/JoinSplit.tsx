@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Camera, Upload, QrCode } from 'lucide-react'
-import { TopAppBar } from '@/components/TopAppBar'
 import { PageLayout } from '@/components/PageLayout'
 import { Button } from '@/components/ui/button'
 import { usePreferCameraCapture } from '@/hooks/usePreferCameraCapture'
@@ -111,7 +110,6 @@ export default function JoinSplit() {
         onChange={onFileChange}
       />
 
-      <TopAppBar />
       <PageLayout className="flex flex-col gap-6">
         <div className="space-y-1">
           <h2 className="font-headline font-extrabold text-3xl text-ds-on-surface tracking-tight leading-tight">
@@ -215,7 +213,7 @@ export default function JoinSplit() {
         </div>
 
         {/* Manual entry */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           <label htmlFor="settlement-id" className="font-label font-semibold text-ds-on-surface text-sm">
             Settlement ID or link
           </label>

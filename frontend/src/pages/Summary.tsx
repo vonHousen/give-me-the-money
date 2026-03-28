@@ -1,5 +1,4 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { TopAppBar } from '@/components/TopAppBar'
 import { PageLayout } from '@/components/PageLayout'
 import { CurrencyDisplay } from '@/components/CurrencyDisplay'
 import { Button } from '@/components/ui/button'
@@ -62,7 +61,6 @@ export default function Summary() {
 
   return (
     <div className="min-h-screen">
-      <TopAppBar />
       <PageLayout className="space-y-8">
         <section className="text-center space-y-2 pt-4">
           <p className="font-label text-ds-on-surface-variant text-sm tracking-wide uppercase">

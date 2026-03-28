@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { TopAppBar } from '@/components/TopAppBar'
 import { PageLayout } from '@/components/PageLayout'
 import { SettlementQr } from '@/components/SettlementQr'
 import { Button } from '@/components/ui/button'
@@ -50,7 +49,6 @@ export default function JoinSettlement() {
 
   return (
     <div className="min-h-screen">
-      <TopAppBar />
       <PageLayout className="space-y-6">
         <div className="space-y-1">
           <h2 className="font-headline font-extrabold text-2xl text-ds-on-surface">Join settlement</h2>
@@ -59,7 +57,7 @@ export default function JoinSettlement() {
           </p>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-3">
           <label htmlFor="join-name" className="font-label font-semibold text-ds-on-surface text-sm">
             Your name
           </label>

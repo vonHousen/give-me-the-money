@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Plus, ReceiptText } from 'lucide-react'
-import { TopAppBar } from '@/components/TopAppBar'
+import { Plus } from 'lucide-react'
 import { PageLayout } from '@/components/PageLayout'
 import { Button } from '@/components/ui/button'
 import { createSettlement } from '@/lib/settlementApi'
@@ -112,22 +111,11 @@ export default function Review() {
 
   return (
     <div className="min-h-screen">
-      <TopAppBar
-        action={
-          <button
-            type="button"
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-ds-surface-container transition-colors"
-            aria-label="Receipt"
-          >
-            <ReceiptText className="w-5 h-5 text-ds-on-surface-variant" />
-          </button>
-        }
-      />
       <PageLayout className="space-y-6">
         <h2 className="font-headline font-extrabold text-2xl text-ds-on-surface">Bill Overview</h2>
 
-        <div className="space-y-2">
-          <label htmlFor="settlement-name" className="font-label font-semibold text-ds-on-surface text-sm">
+        <div className="space-y-3">
+          <label htmlFor="settlement-name" className="font-label font-semibold text-ds-on-surface text-sm block">
             Settlement name
           </label>
           <input

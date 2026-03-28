@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { X, Check } from 'lucide-react'
-import { TopAppBar } from '@/components/TopAppBar'
 import { PageLayout } from '@/components/PageLayout'
 import { SwipeCard } from '@/components/SwipeCard'
 import { QuantityPickOverlay } from '@/components/QuantityPickOverlay'
@@ -17,8 +16,6 @@ import {
   isSettlementOwnerSession,
 } from '@/lib/settlementSession'
 import { roundMoney } from '@/lib/utils'
-
-const TAGS = ['Popular', 'Dish', 'Extra']
 
 export default function Swipe() {
   const { settlementId } = useParams<{ settlementId: string }>()
@@ -76,8 +73,6 @@ export default function Swipe() {
 
   const current = items[index]
   const total = items.length
-
-  const tagForIndex = TAGS[index % TAGS.length]
 
   const submitClaim = useCallback(
     async (quantityClaimed: number) => {
@@ -152,8 +147,7 @@ export default function Swipe() {
   if (loadError || !participantId) {
     return (
       <div className="min-h-screen">
-        <TopAppBar />
-        <PageLayout className="space-y-4 pt-8">
+        <PageLayout className="space-y-4">
           <p className="font-body text-ds-on-surface">
             {loadError ?? 'Join this settlement first with your name.'}
           </p>
@@ -178,8 +172,6 @@ export default function Swipe() {
 
   return (
     <div className="min-h-screen">
-      <TopAppBar />
-
       <PageLayout className="flex flex-col items-center gap-6">
         <div className="w-full flex items-center justify-between">
           <p className="font-label text-ds-on-surface-variant text-xs uppercase tracking-widest font-bold">
@@ -239,9 +231,6 @@ export default function Swipe() {
                 <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-transparent" />
 
                 <div className="absolute top-5 left-5 flex flex-wrap gap-2">
-                  <span className="px-3 py-1.5 bg-ds-surface-container-lowest/90 backdrop-blur-md rounded-full shadow-sm text-[9px] font-bold uppercase tracking-[0.15em] text-ds-primary">
-                    {tagForIndex}
-                  </span>
                   <span className="px-3 py-1.5 bg-ds-primary/90 backdrop-blur-md rounded-full shadow-sm text-[9px] font-bold uppercase tracking-[0.15em] text-ds-on-primary">
                     ×{lineQty} on bill
                   </span>
