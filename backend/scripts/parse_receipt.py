@@ -40,6 +40,7 @@ def main(
 
     image_bytes = image_path.read_bytes()
     img_b64 = base64.b64encode(image_bytes).decode("utf-8")
+
     mime_type = _detect_mime_type(image_path)
 
     result = parse_receipt(img_b64=img_b64, mime_type=mime_type)

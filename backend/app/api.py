@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from app.image_processing import parse_receipt
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
