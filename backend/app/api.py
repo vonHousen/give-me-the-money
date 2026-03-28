@@ -5,6 +5,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.database.settlement_repository import SettlementRepository
+from app.models import ItemBase, Settlement
+from app.services import settle
 
 router = APIRouter()
 
@@ -30,22 +32,9 @@ class AnalyzeResponse(BaseModel):
     items: list[ItemBase]
 
 
-class User(BaseModel):
-    id: UUID
-    name: str
-
-
 class SettlementRequest(BaseModel):
     name: str
     items: list[ItemBase]
-
-
-class Settlement(BaseModel):
-    id: UUID
-    name: str
-    items: list[Item]
-    users: list[User]
-    assignments: dict[str, list[UUID]]  # user uuid -> list of item uuids
 
 
 class JoinRequest(BaseModel):
@@ -53,7 +42,6 @@ class JoinRequest(BaseModel):
     item_ids: list[UUID]
 
 
-_settlements: list[Settlement] = []
 _settlement_repository = SettlementRepository()
 
 
@@ -68,6 +56,10 @@ def analyze(body: AnalyzeRequest) -> AnalyzeResponse:
 
     return AnalyzeResponse(
         name="Pizzeria",
+        items=[
+            ItemBase(name="Pizza Margherita", price=12.50),
+            ItemBase(name="Cola", price=2.00),
+        ],
         currency_code=processed_receipt.currency_code,
         items=items,
     )
@@ -75,27 +67,29 @@ def analyze(body: AnalyzeRequest) -> AnalyzeResponse:
 
 @router.post("/settlements", response_model=Settlement, status_code=201)
 def create_settlement(body: SettlementRequest) -> Settlement:
-    data = _settlement_repository.create_settlement(
+    return _settlement_repository.create_settlement(
         name=body.name,
-        items=[item.model_dump() for item in body.items],
+        items=body.items,
     )
-    return Settlement(**data)
 
 
 @router.get("/settlements/{id}", response_model=Settlement)
 def get_settlement(id: UUID) -> Settlement:
-    data = _settlement_repository.get_settlement(str(id))
-    if data is None:
+    settlement = _settlement_repository.get_settlement(str(id))
+    if settlement is None:
         raise HTTPException(status_code=404, detail="Settlement not found")
-    return Settlement(**data)
+    return settlement
 
 
 @router.post("/settlements/{id}/finish")
 def finish_settlement(id: UUID) -> list[dict]:
-    data = _settlement_repository.get_settlement(str(id))
-    if data is None:
+    settlement = _settlement_repository.get_settlement(str(id))
+    if settlement is None:
         raise HTTPException(status_code=404, detail="Settlement not found")
-    return _settlement_repository.finish_settlement(data)
+    try:
+        return settle(settlement)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 @router.get("/settlements/{id}/status")
@@ -108,11 +102,11 @@ def get_settlement_status(id: UUID) -> dict[str, list[str]]:
 
 @router.put("/settlements/{id}/join", response_model=Settlement)
 def join_settlement(id: UUID, body: JoinRequest) -> Settlement:
-    data = _settlement_repository.join_settlement(
+    settlement = _settlement_repository.join_settlement(
         settlement_id=str(id),
         user_name=body.user_name,
         item_ids=[str(item_id) for item_id in body.item_ids],
     )
-    if data is None:
+    if settlement is None:
         raise HTTPException(status_code=404, detail="Settlement not found")
-    return Settlement(**data)
+    return settlement

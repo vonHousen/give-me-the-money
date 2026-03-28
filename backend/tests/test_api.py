@@ -128,24 +128,30 @@ def test_get_settlement_returns_correct_one() -> None:
 # POST /settlements/{id}/finish
 
 
-def test_finish_settlement_returns_200() -> None:
+def _create_settled_settlement() -> dict:
     created = client.post(
         "/settlements",
         json={"name": "Friday dinner", "items": [{"name": "Pizza", "price": 10.0}]},
     ).json()
+    item_id = created["items"][0]["id"]
+    return client.put(
+        f"/settlements/{created['id']}/join",
+        json={"user_name": "Alice", "item_ids": [item_id]},
+    ).json()
 
-    response = client.post(f"/settlements/{created['id']}/finish")
+
+def test_finish_settlement_returns_200() -> None:
+    settlement = _create_settled_settlement()
+
+    response = client.post(f"/settlements/{settlement['id']}/finish")
 
     assert response.status_code == 200
 
 
 def test_finish_settlement_returns_list() -> None:
-    created = client.post(
-        "/settlements",
-        json={"name": "Friday dinner", "items": [{"name": "Pizza", "price": 10.0}]},
-    ).json()
+    settlement = _create_settled_settlement()
 
-    response = client.post(f"/settlements/{created['id']}/finish")
+    response = client.post(f"/settlements/{settlement['id']}/finish")
 
     assert isinstance(response.json(), list)
 
@@ -155,6 +161,17 @@ def test_finish_settlement_not_found() -> None:
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Settlement not found"}
+
+
+def test_finish_settlement_returns_422_when_empty() -> None:
+    created = client.post(
+        "/settlements",
+        json={"name": "Friday dinner", "items": [{"name": "Pizza", "price": 10.0}]},
+    ).json()
+
+    response = client.post(f"/settlements/{created['id']}/finish")
+
+    assert response.status_code == 422
 
 
 # GET /settlements/{id}/status
