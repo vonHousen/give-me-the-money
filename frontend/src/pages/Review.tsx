@@ -120,80 +120,101 @@ export default function Review() {
         </div>
 
         <div className="overflow-x-auto -mx-1">
-          <table className="w-full min-w-[320px] text-sm border-separate border-spacing-0">
-            <thead>
-              <tr className="font-label font-semibold text-ds-on-surface-variant text-left">
-                <th className="pb-2 pr-2">Item</th>
-                <th className="pb-2 pr-2 w-24">Price</th>
-                <th className="pb-2 pr-2 w-20">Qty</th>
-                <th className="pb-2 text-right w-24">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} className="align-top">
-                  <td className="py-1.5 pr-2">
-                    <input
-                      aria-label={`Item name ${row.id}`}
-                      value={row.name}
-                      onChange={(e) => updateRow(row.id, { name: e.target.value })}
-                      placeholder="Description"
-                      className="w-full min-w-[8rem] rounded-lg border border-transparent bg-ds-surface-container-lowest dark:bg-ds-surface-container px-2 py-1.5 font-body text-ds-on-surface outline-none focus:border-ds-primary"
-                    />
-                  </td>
-                  <td className="py-1.5 pr-2">
-                    <input
-                      aria-label={`Unit price ${row.id}`}
-                      type="number"
-                      inputMode="decimal"
-                      step="0.01"
-                      min="0"
-                      value={Number.isFinite(row.unitPrice) ? row.unitPrice : ''}
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value)
-                        updateRow(row.id, { unitPrice: Number.isFinite(v) ? v : 0 })
-                      }}
-                      className="w-full rounded-lg border border-transparent bg-ds-surface-container-lowest dark:bg-ds-surface-container px-2 py-1.5 font-body text-ds-on-surface tabular-nums outline-none focus:border-ds-primary"
-                    />
-                  </td>
-                  <td className="py-1.5 pr-2">
-                    <input
-                      aria-label={`Quantity ${row.id}`}
-                      type="number"
-                      inputMode="numeric"
-                      step="1"
-                      min="1"
-                      value={Number.isFinite(row.quantity) ? row.quantity : ''}
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value)
-                        updateRow(row.id, { quantity: Number.isFinite(v) && v >= 1 ? v : 1 })
-                      }}
-                      className="w-full rounded-lg border border-transparent bg-ds-surface-container-lowest dark:bg-ds-surface-container px-2 py-1.5 font-body text-ds-on-surface tabular-nums outline-none focus:border-ds-primary"
-                    />
-                  </td>
-                  <td className="py-1.5 text-right font-label font-semibold text-ds-primary tabular-nums">
-                    ${lineSubtotal(row).toFixed(2)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <section className="space-y-1 min-w-[320px] w-full">
+            <div className="grid grid-cols-12 gap-x-2 px-4 py-3 mb-1 items-end">
+              <div className="col-span-5 font-label text-[10px] uppercase tracking-[0.05em] text-ds-on-surface-variant font-semibold">
+                Item
+              </div>
+              <div className="col-span-2 font-label text-[10px] uppercase tracking-[0.05em] text-ds-on-surface-variant font-semibold text-center">
+                Unit price
+              </div>
+              <div className="col-span-2 font-label text-[10px] uppercase tracking-[0.05em] text-ds-on-surface-variant font-semibold text-center">
+                Qty
+              </div>
+              <div className="col-span-3 font-label text-[10px] uppercase tracking-[0.05em] text-ds-on-surface-variant font-semibold text-right">
+                Subtotal
+              </div>
+            </div>
+            {rows.map((row) => (
+              <div
+                key={row.id}
+                className="grid grid-cols-12 gap-x-2 items-center px-4 py-5 rounded-sm bg-ds-surface-container-low dark:bg-ds-surface-container-low hover:bg-ds-surface-container-high dark:hover:bg-ds-surface-container-high transition-colors"
+              >
+                <div className="col-span-5 min-w-0">
+                  <input
+                    aria-label={`Item name ${row.id}`}
+                    value={row.name}
+                    onChange={(e) => updateRow(row.id, { name: e.target.value })}
+                    placeholder="Description"
+                    className="w-full min-w-[6rem] rounded-md border border-transparent bg-transparent px-0 py-0.5 font-body text-sm text-ds-on-surface placeholder:text-ds-on-surface-variant/60 outline-none focus-visible:ring-2 focus-visible:ring-ds-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ds-surface-container-low dark:focus-visible:ring-offset-ds-surface-container-low"
+                  />
+                </div>
+                <div className="col-span-2 min-w-0">
+                  <input
+                    aria-label={`Unit price ${row.id}`}
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0"
+                    value={Number.isFinite(row.unitPrice) ? row.unitPrice : ''}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value)
+                      updateRow(row.id, { unitPrice: Number.isFinite(v) ? v : 0 })
+                    }}
+                    className="w-full rounded-md border border-transparent bg-transparent px-1 py-0.5 font-body text-sm text-ds-on-surface text-center tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ds-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ds-surface-container-low dark:focus-visible:ring-offset-ds-surface-container-low"
+                  />
+                </div>
+                <div className="col-span-2 min-w-0">
+                  <input
+                    aria-label={`Quantity ${row.id}`}
+                    type="number"
+                    inputMode="numeric"
+                    step="1"
+                    min="1"
+                    value={Number.isFinite(row.quantity) ? row.quantity : ''}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value)
+                      updateRow(row.id, { quantity: Number.isFinite(v) && v >= 1 ? v : 1 })
+                    }}
+                    className="w-full rounded-md border border-transparent bg-transparent px-1 py-0.5 font-body text-sm text-ds-on-surface text-center tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ds-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ds-surface-container-low dark:focus-visible:ring-offset-ds-surface-container-low"
+                  />
+                </div>
+                <div className="col-span-3 text-right font-headline text-base font-bold text-ds-primary tabular-nums">
+                  ${lineSubtotal(row).toFixed(2)}
+                </div>
+              </div>
+            ))}
+          </section>
         </div>
 
-        <div className="flex items-center justify-between px-1 py-2 bg-ds-surface-container-low dark:bg-ds-surface-container-high rounded-xl">
-          <span className="font-headline font-bold text-ds-on-surface">Total</span>
-          <span className="font-headline font-bold text-ds-primary tabular-nums">${grandTotal.toFixed(2)}</span>
-        </div>
-
-        <Button
+        <button
           type="button"
-          variant="pill-ghost"
-          className="w-full border border-ds-outline-variant"
           onClick={addRow}
+          className="w-full flex items-center justify-center gap-2 py-4 border border-ds-outline/20 rounded-lg font-label text-xs font-medium uppercase tracking-[0.08em] text-ds-on-surface-variant hover:bg-ds-surface-container-low dark:hover:bg-ds-surface-container-low transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ds-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ds-surface"
         >
-          <Plus className="w-4 h-4 mr-2" aria-hidden />
-          Add row
-        </Button>
+          <Plus className="w-4 h-4 shrink-0" aria-hidden />
+          Add new row
+        </button>
+
+        <section className="bg-ds-surface-container-high dark:bg-ds-surface-container-high p-6 sm:p-8 rounded-xl shadow-lg shadow-ds-primary/10">
+          <div className="flex justify-between items-baseline mb-6 gap-4">
+            <span className="font-label text-xs uppercase tracking-widest text-ds-on-surface-variant font-semibold">
+              Subtotal
+            </span>
+            <span className="font-headline text-lg font-bold text-ds-on-surface tabular-nums">
+              ${grandTotal.toFixed(2)}
+            </span>
+          </div>
+          <div className="h-px bg-ds-outline-variant/20 mb-6" />
+          <div className="flex justify-between items-center gap-4">
+            <span className="font-label text-xs uppercase tracking-widest text-ds-on-surface-variant font-bold">
+              Total balance
+            </span>
+            <span className="font-headline text-3xl sm:text-4xl font-extrabold text-ds-primary tracking-tight tabular-nums shrink-0">
+              ${grandTotal.toFixed(2)}
+            </span>
+          </div>
+        </section>
 
         {error ? (
           <p className="font-body text-sm text-red-600 dark:text-red-400" role="alert">
