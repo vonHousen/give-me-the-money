@@ -57,25 +57,29 @@ describe('createSettlement', () => {
 
     expect(fetchSpy).not.toHaveBeenCalled()
     expect(res.name).toBe('Test')
-    expect(res.items).toEqual(body.items)
+    expect(res.items[0].name).toBe('A')
+    expect(res.items[0].price).toBe(10.5)
+    expect(res.items[0].quantity).toBe(1)
+    expect(res.items[0].unitPrice).toBe(10.5)
     expect(res.id).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     )
     expect(res.users).toHaveLength(1)
-    expect(res.users[0].name).toBe('Test')
+    expect(res.users[0].name).toBe('Owner')
   })
 
-  it('POSTs JSON to {base}/settlements when URL is set', async () => {
+  it('POSTs JSON to {base}/settlements with backend-compatible shape when URL is set', async () => {
     vi.stubEnv('VITE_SETTLEMENT_API_URL', 'http://example.test')
-    const created = {
+    const backendResponse = {
       id: '00000000-0000-0000-0000-000000000099',
       name: 'Test',
-      items: body.items.map((i) => ({ ...i })),
+      items: [{ id: 'item-1', name: 'A', price: 10.5, count: 1 }],
       users: [],
       assignments: {},
+      claims: {},
     }
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify(created), {
+      new Response(JSON.stringify(backendResponse), {
         status: 201,
         headers: { 'Content-Type': 'application/json' },
       }),
@@ -88,10 +92,16 @@ describe('createSettlement', () => {
       expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          name: 'Test',
+          items: [{ name: 'A', price: 10.5, count: 1 }],
+          owner_name: 'Owner',
+        }),
       }),
     )
-    expect(res).toEqual(created)
+    expect(res.id).toBe('00000000-0000-0000-0000-000000000099')
+    expect(res.items[0].quantity).toBe(1)
+    expect(res.items[0].unitPrice).toBe(10.5)
   })
 
   it('throws on non-OK response', async () => {
@@ -99,6 +109,79 @@ describe('createSettlement', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('bad', { status: 500 }))
 
     await expect(createSettlement(body)).rejects.toThrow(/500/)
+  })
+})
+
+describe('joinSettlement with real API', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+  })
+
+  it('sends PUT with user_name and parses participant_id', async () => {
+    vi.stubEnv('VITE_SETTLEMENT_API_URL', 'http://example.test')
+    const backendResponse = {
+      participant_id: 'user-42',
+      settlement: {
+        id: 'settle-1',
+        name: 'Dinner',
+        items: [{ id: 'i1', name: 'Pizza', price: 10, count: 1 }],
+        users: [{ id: 'user-42', name: 'Sam', is_owner: false, swipe_finished: false }],
+        assignments: {},
+        claims: {},
+      },
+    }
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify(backendResponse), { status: 200 }),
+    )
+
+    const res = await joinSettlement('settle-1', 'Sam')
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      'http://example.test/settlements/settle-1/join',
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({ user_name: 'Sam', item_ids: [] }),
+      }),
+    )
+    expect(res.participantId).toBe('user-42')
+    expect(res.settlement.id).toBe('settle-1')
+  })
+})
+
+describe('getSettlementStatus with real API', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+  })
+
+  it('parses backend snake_case participants into camelCase', async () => {
+    vi.stubEnv('VITE_SETTLEMENT_API_URL', 'http://example.test')
+    const backendResponse = {
+      participants: [
+        { id: 'u1', name: 'Alice', is_owner: true, swipe_finished: true },
+        { id: 'u2', name: 'Bob', is_owner: false, swipe_finished: false },
+      ],
+    }
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify(backendResponse), { status: 200 }),
+    )
+
+    const res = await getSettlementStatus('s1')
+
+    expect(res.participants).toHaveLength(2)
+    expect(res.participants[0]).toEqual({
+      id: 'u1',
+      name: 'Alice',
+      isOwner: true,
+      swipeFinished: true,
+    })
+    expect(res.participants[1]).toEqual({
+      id: 'u2',
+      name: 'Bob',
+      isOwner: false,
+      swipeFinished: false,
+    })
   })
 })
 
@@ -112,7 +195,7 @@ describe('mock settlement lifecycle', () => {
     vi.stubEnv('VITE_SETTLEMENT_API_URL', '')
     const created = await createSettlement({
       name: 'Cafe',
-      items: [{ id: 'it1', name: 'Coffee', price: 4, quantity: 1, unitPrice: 4 }],
+      items: [{ id: 'x', name: 'Coffee', price: 4, quantity: 1, unitPrice: 4 }],
     })
     const { participantId } = await joinSettlement(created.id, 'Sam')
     expect(participantId).toMatch(/^[0-9a-f-]{36}$/i)
@@ -133,12 +216,13 @@ describe('mock settlement lifecycle', () => {
     vi.stubEnv('VITE_SETTLEMENT_API_URL', '')
     const created = await createSettlement({
       name: 'Bar',
-      items: [{ id: 'b1', name: 'Beer', price: 50, quantity: 5, unitPrice: 10 }],
+      items: [{ id: 'x', name: 'Beer', price: 50, quantity: 5, unitPrice: 10 }],
     })
+    const beerItem = created.items[0]
     const { participantId } = await joinSettlement(created.id, 'Sam')
     const ownerId = created.users[0].id
-    await recordItemClaim(created.id, ownerId, 'b1', 4)
-    await recordItemClaim(created.id, participantId, 'b1', 1)
+    await recordItemClaim(created.id, ownerId, beerItem.id, 4)
+    await recordItemClaim(created.id, participantId, beerItem.id, 1)
     await markSwipeComplete(created.id, ownerId)
     await markSwipeComplete(created.id, participantId)
     const { summary } = await finishSettlement(created.id)
@@ -154,12 +238,13 @@ describe('mock settlement lifecycle', () => {
     vi.stubEnv('VITE_SETTLEMENT_API_URL', '')
     const created = await createSettlement({
       name: 'Bar',
-      items: [{ id: 'b1', name: 'Beer', price: 50, quantity: 5, unitPrice: 10 }],
+      items: [{ id: 'x', name: 'Beer', price: 50, quantity: 5, unitPrice: 10 }],
     })
+    const beerItem = created.items[0]
     const { participantId } = await joinSettlement(created.id, 'Sam')
     const ownerId = created.users[0].id
-    await recordItemClaim(created.id, ownerId, 'b1', 4)
-    await recordItemClaim(created.id, participantId, 'b1', 4)
+    await recordItemClaim(created.id, ownerId, beerItem.id, 4)
+    await recordItemClaim(created.id, participantId, beerItem.id, 4)
     await markSwipeComplete(created.id, ownerId)
     await markSwipeComplete(created.id, participantId)
     await expect(finishSettlement(created.id)).rejects.toThrow(/exceed/)

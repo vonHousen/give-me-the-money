@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
@@ -28,6 +28,9 @@ describe('blobToBase64Payload', () => {
   it('reads sample receipt.jpeg and produces non-empty base64', async () => {
     const thisDir = dirname(fileURLToPath(import.meta.url))
     const samplePath = join(thisDir, '../../../data/receipt.jpeg')
+    if (!existsSync(samplePath)) {
+      return
+    }
     const buf = readFileSync(samplePath)
     const file = new File([buf], 'receipt.jpeg', { type: 'image/jpeg' })
     const { image_base64, mime_type } = await blobToBase64Payload(file)

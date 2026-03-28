@@ -93,8 +93,12 @@ def test_create_settlement_response_schema() -> None:
     assert data["items"][0]["price"] == 10.0
     assert data["items"][1]["name"] == "Cola"
     assert data["items"][1]["price"] == 2.5
-    assert data["users"] == []
-    assert data["assignments"] == {}
+    assert len(data["users"]) == 1
+    owner = data["users"][0]
+    assert owner["name"] == "Owner"
+    assert owner["is_owner"] is True
+    assert owner["swipe_finished"] is False
+    assert owner["id"] in data["assignments"]
 
 
 def test_create_settlement_request_does_not_require_item_ids() -> None:
@@ -152,10 +156,11 @@ def _create_settled_settlement() -> dict:
         json={"name": "Friday dinner", "items": [{"name": "Pizza", "price": 10.0, "count": 1}]},
     ).json()
     item_id = created["items"][0]["id"]
-    return client.put(
+    join_resp = client.put(
         f"/settlements/{created['id']}/join",
         json={"user_name": "Alice", "item_ids": [item_id]},
     ).json()
+    return join_resp["settlement"]
 
 
 def test_finish_settlement_returns_200() -> None:
@@ -166,12 +171,16 @@ def test_finish_settlement_returns_200() -> None:
     assert response.status_code == 200
 
 
-def test_finish_settlement_returns_list() -> None:
+def test_finish_settlement_returns_summary() -> None:
     settlement = _create_settled_settlement()
 
     response = client.post(f"/settlements/{settlement['id']}/finish")
+    data = response.json()
 
-    assert isinstance(response.json(), list)
+    assert "summary" in data
+    assert "venue_name" in data["summary"]
+    assert "people" in data["summary"]
+    assert "grand_total" in data["summary"]
 
 
 def test_finish_settlement_not_found() -> None:
@@ -181,10 +190,10 @@ def test_finish_settlement_not_found() -> None:
     assert response.json() == {"detail": "Settlement not found"}
 
 
-def test_finish_settlement_returns_422_when_empty() -> None:
+def test_finish_settlement_returns_422_when_no_items() -> None:
     created = client.post(
         "/settlements",
-        json={"name": "Friday dinner", "items": [{"name": "Pizza", "price": 10.0, "count": 1}]},
+        json={"name": "Friday dinner", "items": []},
     ).json()
 
     response = client.post(f"/settlements/{created['id']}/finish")
@@ -195,7 +204,7 @@ def test_finish_settlement_returns_422_when_empty() -> None:
 # GET /settlements/{id}/status
 
 
-def test_get_settlement_status_returns_empty_list_when_no_users() -> None:
+def test_get_settlement_status_returns_owner_participant() -> None:
     created = client.post(
         "/settlements",
         json={"name": "Friday dinner", "items": [{"name": "Pizza", "price": 10.0, "count": 1}]},
@@ -204,10 +213,13 @@ def test_get_settlement_status_returns_empty_list_when_no_users() -> None:
     response = client.get(f"/settlements/{created['id']}/status")
 
     assert response.status_code == 200
-    assert response.json() == {"users": []}
+    data = response.json()
+    assert len(data["participants"]) == 1
+    assert data["participants"][0]["is_owner"] is True
+    assert data["participants"][0]["name"] == "Owner"
 
 
-def test_get_settlement_status_returns_joined_user_names() -> None:
+def test_get_settlement_status_returns_joined_participants() -> None:
     created = client.post(
         "/settlements",
         json={"name": "Friday dinner", "items": [{"name": "Pizza", "price": 10.0, "count": 1}]},
@@ -225,7 +237,15 @@ def test_get_settlement_status_returns_joined_user_names() -> None:
     response = client.get(f"/settlements/{created['id']}/status")
 
     assert response.status_code == 200
-    assert response.json() == {"users": ["Alice", "Bob"]}
+    data = response.json()
+    assert len(data["participants"]) == 3  # owner + Alice + Bob
+    names = [p["name"] for p in data["participants"]]
+    assert "Alice" in names
+    assert "Bob" in names
+    for p in data["participants"]:
+        assert "id" in p
+        assert "is_owner" in p
+        assert "swipe_finished" in p
 
 
 def test_get_settlement_status_not_found() -> None:
@@ -258,6 +278,24 @@ def test_join_settlement_returns_200() -> None:
     assert response.status_code == 200
 
 
+def test_join_settlement_returns_participant_id() -> None:
+    created = client.post(
+        "/settlements",
+        json={
+            "name": "Friday dinner",
+            "items": [{"name": "Pizza", "price": 10.0, "count": 1}],
+        },
+    ).json()
+
+    data = client.put(
+        f"/settlements/{created['id']}/join",
+        json={"user_name": "Alice"},
+    ).json()
+
+    assert "participant_id" in data
+    assert "settlement" in data
+
+
 def test_join_settlement_adds_user() -> None:
     created = client.post(
         "/settlements",
@@ -268,15 +306,16 @@ def test_join_settlement_adds_user() -> None:
     ).json()
     item_id = created["items"][0]["id"]
 
-    response = client.put(
+    data = client.put(
         f"/settlements/{created['id']}/join",
         json={"user_name": "Alice", "item_ids": [item_id]},
-    )
-    data = response.json()
+    ).json()
+    settlement = data["settlement"]
 
-    assert len(data["users"]) == 1
-    assert data["users"][0]["name"] == "Alice"
-    assert "id" in data["users"][0]
+    assert len(settlement["users"]) == 2  # owner + Alice
+    assert settlement["users"][0]["is_owner"] is True
+    assert settlement["users"][1]["name"] == "Alice"
+    assert "id" in settlement["users"][1]
 
 
 def test_join_settlement_records_assignment() -> None:
@@ -293,10 +332,11 @@ def test_join_settlement_records_assignment() -> None:
         f"/settlements/{created['id']}/join",
         json={"user_name": "Alice", "item_ids": [item_id]},
     ).json()
+    settlement = data["settlement"]
 
-    user_id = data["users"][0]["id"]
-    assert user_id in data["assignments"]
-    assert data["assignments"][user_id] == [item_id]
+    alice_id = settlement["users"][1]["id"]
+    assert alice_id in settlement["assignments"]
+    assert settlement["assignments"][alice_id] == [item_id]
 
 
 def test_join_settlement_returns_settlement() -> None:
@@ -309,14 +349,13 @@ def test_join_settlement_returns_settlement() -> None:
     ).json()
     item_id = created["items"][0]["id"]
 
-    response = client.put(
+    data = client.put(
         f"/settlements/{created['id']}/join",
         json={"user_name": "Alice", "item_ids": [item_id]},
-    )
-    data = response.json()
+    ).json()
 
-    assert data["id"] == created["id"]
-    assert data["name"] == "Friday dinner"
+    assert data["settlement"]["id"] == created["id"]
+    assert data["settlement"]["name"] == "Friday dinner"
 
 
 def test_join_settlement_not_found() -> None:
@@ -327,3 +366,66 @@ def test_join_settlement_not_found() -> None:
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Settlement not found"}
+
+
+# POST /settlements/{id}/claims
+
+
+def test_record_claim_returns_200() -> None:
+    created = client.post(
+        "/settlements",
+        json={"name": "Dinner", "items": [{"name": "Pizza", "price": 10.0, "count": 2}]},
+    ).json()
+    join_resp = client.put(
+        f"/settlements/{created['id']}/join",
+        json={"user_name": "Alice"},
+    ).json()
+    user_id = join_resp["participant_id"]
+    item_id = created["items"][0]["id"]
+
+    response = client.post(
+        f"/settlements/{created['id']}/claims",
+        json={"user_id": user_id, "item_id": item_id, "quantity_claimed": 1},
+    )
+
+    assert response.status_code == 200
+
+
+def test_record_claim_not_found() -> None:
+    response = client.post(
+        "/settlements/00000000-0000-0000-0000-000000000000/claims",
+        json={"user_id": "x", "item_id": "y", "quantity_claimed": 1},
+    )
+
+    assert response.status_code == 404
+
+
+# POST /settlements/{id}/swipe-complete
+
+
+def test_swipe_complete_returns_200() -> None:
+    created = client.post(
+        "/settlements",
+        json={"name": "Dinner", "items": [{"name": "Pizza", "price": 10.0, "count": 1}]},
+    ).json()
+    join_resp = client.put(
+        f"/settlements/{created['id']}/join",
+        json={"user_name": "Alice"},
+    ).json()
+    user_id = join_resp["participant_id"]
+
+    response = client.post(
+        f"/settlements/{created['id']}/swipe-complete",
+        json={"user_id": user_id},
+    )
+
+    assert response.status_code == 200
+
+
+def test_swipe_complete_not_found() -> None:
+    response = client.post(
+        "/settlements/00000000-0000-0000-0000-000000000000/swipe-complete",
+        json={"user_id": "x"},
+    )
+
+    assert response.status_code == 404

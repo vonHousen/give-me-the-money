@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { getReceiptScanApiUrl, submitReceiptScan } from './receiptScanApi'
+import { analyzeReceipt, getReceiptScanApiUrl } from './receiptScanApi'
 
 describe('getReceiptScanApiUrl', () => {
   afterEach(() => {
@@ -11,13 +11,13 @@ describe('getReceiptScanApiUrl', () => {
     expect(getReceiptScanApiUrl()).toBeUndefined()
   })
 
-  it('returns trimmed URL when set', () => {
-    vi.stubEnv('VITE_RECEIPT_SCAN_API_URL', '  http://localhost:8000/scan  ')
-    expect(getReceiptScanApiUrl()).toBe('http://localhost:8000/scan')
+  it('returns trimmed URL without trailing slash when set', () => {
+    vi.stubEnv('VITE_RECEIPT_SCAN_API_URL', '  http://localhost:8000/  ')
+    expect(getReceiptScanApiUrl()).toBe('http://localhost:8000')
   })
 })
 
-describe('submitReceiptScan', () => {
+describe('analyzeReceipt', () => {
   afterEach(() => {
     vi.unstubAllEnvs()
     vi.restoreAllMocks()
@@ -27,45 +27,54 @@ describe('submitReceiptScan', () => {
     vi.stubEnv('VITE_RECEIPT_SCAN_API_URL', '')
     const fetchSpy = vi.spyOn(globalThis, 'fetch')
     vi.useFakeTimers()
-    const p = submitReceiptScan({ image_base64: 'YQ==', mime_type: 'image/png' })
+    const p = analyzeReceipt({ image_base64: 'YQ==', mime_type: 'image/png' })
     await vi.advanceTimersByTimeAsync(400)
     const res = await p
     vi.useRealTimers()
 
     expect(fetchSpy).not.toHaveBeenCalled()
-    expect(res.receipt_id).toBe('mock-receipt-id')
-    expect(res.status).toBe('accepted')
+    expect(res.name).toBe('Le Bistro Central')
+    expect(res.currency_code).toBe('USD')
+    expect(res.items.length).toBeGreaterThan(0)
+    expect(res.items[0]).toHaveProperty('name')
+    expect(res.items[0]).toHaveProperty('price')
+    expect(res.items[0]).toHaveProperty('count')
   })
 
-  it('POSTs JSON when URL is set', async () => {
-    vi.stubEnv('VITE_RECEIPT_SCAN_API_URL', 'http://example.test/api/scan')
+  it('POSTs JSON to {base}/analyze when URL is set', async () => {
+    vi.stubEnv('VITE_RECEIPT_SCAN_API_URL', 'http://example.test')
     const payload = { image_base64: 'YQ==', mime_type: 'image/png' }
+    const backendResponse = {
+      name: 'Pizzeria',
+      currency_code: 'PLN',
+      items: [{ name: 'Pizza', price: 12.5, count: 1 }],
+    }
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ receipt_id: 'srv-1', status: 'ok' }), {
+      new Response(JSON.stringify(backendResponse), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       }),
     )
 
-    const res = await submitReceiptScan(payload)
+    const res = await analyzeReceipt(payload)
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'http://example.test/api/scan',
+      'http://example.test/analyze',
       expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       }),
     )
-    expect(res).toEqual({ receipt_id: 'srv-1', status: 'ok' })
+    expect(res).toEqual(backendResponse)
   })
 
   it('throws on non-OK response', async () => {
-    vi.stubEnv('VITE_RECEIPT_SCAN_API_URL', 'http://example.test/api/scan')
+    vi.stubEnv('VITE_RECEIPT_SCAN_API_URL', 'http://example.test')
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('bad', { status: 500 }))
 
     await expect(
-      submitReceiptScan({ image_base64: 'YQ==', mime_type: 'image/png' }),
+      analyzeReceipt({ image_base64: 'YQ==', mime_type: 'image/png' }),
     ).rejects.toThrow(/500/)
   })
 })

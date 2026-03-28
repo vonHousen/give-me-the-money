@@ -14,8 +14,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.image_processing.parse_receipt import parse_receipt
-from app.logging import configure_logging
+from app.image_processing.parse_receipt import parse_receipt  # noqa: E402
+from app.logging import configure_logging  # noqa: E402
 
 app = typer.Typer(add_completion=False, help="Parse a receipt image and display parsed line items.")
 console = Console()

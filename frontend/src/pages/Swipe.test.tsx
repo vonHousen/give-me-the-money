@@ -14,7 +14,7 @@ describe('Swipe', () => {
     resetSettlementMockStore()
     const res = mockCreateSettlement({
       name: 'Test bill',
-      items: [{ id: 'i1', name: 'Item one', price: 5, quantity: 1, unitPrice: 5 }],
+      items: [{ name: 'Item one', price: 5, count: 1 }],
     })
     settlementId = res.id
     markSettlementOwnerSession(res.id, res.users[0].id)

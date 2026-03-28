@@ -1,29 +1,21 @@
 import { randomUuid, roundMoney } from '@/lib/utils'
-import {
-  normalizeSettlementItem,
-  type CreateSettlementRequest,
-  type SettlementItemWire,
-  type SettlementResponse,
-  type SettlementSummaryPayload,
-  type SettlementSummaryPerson,
-  type SettlementSummaryLine,
+import type {
+  BackendFinishResponseWire,
+  BackendItemWire,
+  BackendJoinResponseWire,
+  BackendSettlementWire,
+  BackendStatusResponseWire,
+  BackendSummaryLineWire,
+  BackendSummaryPersonWire,
 } from '@/lib/settlementTypes'
 
-export type MockParticipant = {
-  id: string
-  name: string
-  isOwner: boolean
-  swipeFinished: boolean
-}
-
-type MockSettlementRecord = {
-  id: string
-  name: string
-  items: SettlementItemWire[]
-  participants: MockParticipant[]
-  assignments: Record<string, string[]>
-  /** participantId -> itemId -> quantity claimed (0 = omit key) */
-  claims: Record<string, Record<string, number>>
+type MockSettlementRecord = BackendSettlementWire & {
+  participants_meta: {
+    id: string
+    name: string
+    is_owner: boolean
+    swipe_finished: boolean
+  }[]
 }
 
 const store = new Map<string, MockSettlementRecord>()
@@ -32,86 +24,100 @@ export function resetSettlementMockStore(): void {
   store.clear()
 }
 
-function recordToResponse(rec: MockSettlementRecord): SettlementResponse {
+function recordToWire(rec: MockSettlementRecord): BackendSettlementWire {
   return {
     id: rec.id,
     name: rec.name,
-    items: rec.items.map((i) => normalizeSettlementItem(i)),
-    users: rec.participants.map((p) => ({ id: p.id, name: p.name })),
+    items: rec.items.map((i) => ({ ...i })),
+    users: rec.participants_meta.map((p) => ({
+      id: p.id,
+      name: p.name,
+      is_owner: p.is_owner,
+      swipe_finished: p.swipe_finished,
+    })),
     assignments: { ...rec.assignments },
+    claims: JSON.parse(JSON.stringify(rec.claims)),
   }
 }
 
-export function mockCreateSettlement(body: CreateSettlementRequest): SettlementResponse {
+export function mockCreateSettlement(body: {
+  name: string
+  items: { name: string; price: number; count: number }[]
+  owner_name?: string
+}): BackendSettlementWire {
   const id = randomUuid()
   const ownerId = randomUuid()
   const title = body.name.trim() || 'Receipt'
+  const ownerName = body.owner_name ?? 'Owner'
+  const items: BackendItemWire[] = body.items.map((i) => ({
+    id: randomUuid(),
+    name: i.name,
+    price: i.price,
+    count: i.count,
+  }))
   const rec: MockSettlementRecord = {
     id,
     name: title,
-    items: body.items.map((i) => normalizeSettlementItem(i)),
-    participants: [{ id: ownerId, name: title, isOwner: true, swipeFinished: false }],
-    assignments: {},
+    items,
+    users: [{ id: ownerId, name: ownerName, is_owner: true, swipe_finished: false }],
+    assignments: { [ownerId]: [] },
     claims: { [ownerId]: {} },
+    participants_meta: [{ id: ownerId, name: ownerName, is_owner: true, swipe_finished: false }],
   }
   store.set(id, rec)
-  return recordToResponse(rec)
+  return recordToWire(rec)
 }
 
-export function mockGetSettlementRecord(settlementId: string): MockSettlementRecord | undefined {
-  return store.get(settlementId)
+export function mockGetSettlementRecord(settlementId: string): BackendSettlementWire | undefined {
+  const rec = store.get(settlementId)
+  return rec ? recordToWire(rec) : undefined
 }
 
 export function mockJoinSettlement(
   settlementId: string,
-  name: string,
-): { participantId: string; settlement: SettlementResponse } {
+  userName: string,
+): BackendJoinResponseWire {
   const rec = store.get(settlementId)
   if (!rec) {
     throw new Error('Settlement not found')
   }
-  const trimmed = name.trim()
+  const trimmed = userName.trim()
   if (!trimmed) {
     throw new Error('Name is required')
   }
   const participantId = randomUuid()
-  rec.participants.push({
+  const participant = {
     id: participantId,
     name: trimmed,
-    isOwner: false,
-    swipeFinished: false,
-  })
+    is_owner: false,
+    swipe_finished: false,
+  }
+  rec.participants_meta.push(participant)
   rec.claims[participantId] = {}
-  return { participantId, settlement: recordToResponse(rec) }
+  return {
+    participant_id: participantId,
+    settlement: recordToWire(rec),
+  }
 }
 
-export type SettlementStatusParticipant = {
-  id: string
-  name: string
-  isOwner: boolean
-  swipeFinished: boolean
-}
-
-export function mockGetSettlementStatus(settlementId: string): {
-  participants: SettlementStatusParticipant[]
-} {
+export function mockGetSettlementStatus(settlementId: string): BackendStatusResponseWire {
   const rec = store.get(settlementId)
   if (!rec) {
     throw new Error('Settlement not found')
   }
   return {
-    participants: rec.participants.map((p) => ({
+    participants: rec.participants_meta.map((p) => ({
       id: p.id,
       name: p.name,
-      isOwner: p.isOwner,
-      swipeFinished: p.swipeFinished,
+      is_owner: p.is_owner,
+      swipe_finished: p.swipe_finished,
     })),
   }
 }
 
 export function mockRecordItemClaim(
   settlementId: string,
-  participantId: string,
+  userId: string,
   itemId: string,
   quantityClaimed: number,
 ): void {
@@ -123,15 +129,14 @@ export function mockRecordItemClaim(
   if (!item) {
     throw new Error('Item not found')
   }
-  const n = normalizeSettlementItem(item)
   const q = Math.floor(quantityClaimed)
-  if (!Number.isFinite(q) || q < 0 || q > n.quantity) {
+  if (!Number.isFinite(q) || q < 0 || q > item.count) {
     throw new Error('Invalid claim quantity')
   }
-  if (!rec.claims[participantId]) {
-    rec.claims[participantId] = {}
+  if (!rec.claims[userId]) {
+    rec.claims[userId] = {}
   }
-  const map = rec.claims[participantId]
+  const map = rec.claims[userId]
   if (q === 0) {
     delete map[itemId]
   } else {
@@ -139,25 +144,25 @@ export function mockRecordItemClaim(
   }
 }
 
-export function mockMarkSwipeComplete(settlementId: string, participantId: string): void {
+export function mockMarkSwipeComplete(settlementId: string, userId: string): void {
   const rec = store.get(settlementId)
   if (!rec) {
     throw new Error('Settlement not found')
   }
-  const p = rec.participants.find((x) => x.id === participantId)
+  const p = rec.participants_meta.find((x) => x.id === userId)
   if (!p) {
     throw new Error('Participant not found')
   }
-  p.swipeFinished = true
+  p.swipe_finished = true
 }
 
-export function mockFinishSettlement(settlementId: string): { summary: SettlementSummaryPayload } {
+export function mockFinishSettlement(settlementId: string): BackendFinishResponseWire {
   const rec = store.get(settlementId)
   if (!rec) {
     throw new Error('Settlement not found')
   }
 
-  const itemById = new Map(rec.items.map((i) => [i.id, normalizeSettlementItem(i)]))
+  const itemById = new Map(rec.items.map((i) => [i.id, i]))
 
   for (const item of itemById.values()) {
     let sum = 0
@@ -165,24 +170,25 @@ export function mockFinishSettlement(settlementId: string): { summary: Settlemen
       const q = rec.claims[pid]?.[item.id] ?? 0
       sum += q
     }
-    if (sum > item.quantity) {
+    if (sum > item.count) {
       throw new Error(
-        `Claims for "${item.name}" exceed the quantity on the bill (${sum} > ${item.quantity}).`,
+        `Claims for "${item.name}" exceed the quantity on the bill (${sum} > ${item.count}).`,
       )
     }
   }
 
-  const people: SettlementSummaryPerson[] = rec.participants.map((p) => {
-    const myItems: SettlementSummaryLine[] = []
+  const people: BackendSummaryPersonWire[] = rec.participants_meta.map((p) => {
+    const myItems: BackendSummaryLineWire[] = []
     const byItem = rec.claims[p.id] ?? {}
     for (const item of itemById.values()) {
       const qty = byItem[item.id] ?? 0
       if (qty <= 0) {
         continue
       }
-      const linePrice = roundMoney(item.unitPrice * qty)
+      const unitPrice = item.count > 0 ? item.price / item.count : item.price
+      const linePrice = roundMoney(unitPrice * qty)
       myItems.push({
-        name: qty > 1 ? `${item.name} ×${qty}` : item.name,
+        name: qty > 1 ? `${item.name} x${qty}` : item.name,
         price: linePrice,
         quantity: qty,
       })
@@ -190,7 +196,7 @@ export function mockFinishSettlement(settlementId: string): { summary: Settlemen
     return {
       id: p.id,
       name: p.name,
-      isOwner: p.isOwner,
+      is_owner: p.is_owner,
       items: myItems,
     }
   })
@@ -199,9 +205,9 @@ export function mockFinishSettlement(settlementId: string): { summary: Settlemen
 
   return {
     summary: {
-      venueName: rec.name,
+      venue_name: rec.name,
       people,
-      grandTotal,
+      grand_total: grandTotal,
     },
   }
 }
