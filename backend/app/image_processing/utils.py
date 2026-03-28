@@ -1,6 +1,5 @@
 import base64
 import binascii
-import logging
 import re
 from decimal import Decimal, InvalidOperation
 from typing import Any
@@ -13,8 +12,6 @@ from app.image_processing.model import ReceiptRow
 
 DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite-preview"
 DEFAULT_CURRENCY_CODE = "PLN"
-
-LOGGER = logging.getLogger(__name__)
 
 
 def extract_payload_and_mime(img_b64: str, mime_type: str) -> tuple[str, str]:

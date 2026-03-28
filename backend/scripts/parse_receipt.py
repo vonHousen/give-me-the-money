@@ -16,6 +16,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from app.image_processing.parse_receipt import parse_receipt
+from app.logging import configure_logging
 
 app = typer.Typer(add_completion=False, help="Parse a receipt image and display parsed line items.")
 console = Console()
@@ -35,6 +36,8 @@ def main(
     image_path: Path = typer.Argument(..., exists=True, file_okay=True, dir_okay=False),
 ) -> None:
     """Parse receipt image with Gemini-powered parser."""
+    configure_logging()
+
     image_bytes = image_path.read_bytes()
     img_b64 = base64.b64encode(image_bytes).decode("utf-8")
     mime_type = _detect_mime_type(image_path)
