@@ -79,7 +79,7 @@ export type SettlementItemWire = {
 export function normalizeSettlementItem(
   i: Pick<SettlementItemWire, 'id' | 'name' | 'price'> &
     Partial<Pick<SettlementItemWire, 'quantity' | 'unitPrice'>> &
-    { count?: number },
+  { count?: number },
 ): SettlementItemWire {
   const rawQty = typeof i.count === 'number' && i.count >= 1 ? i.count : i.quantity
   const q =
@@ -101,6 +101,7 @@ export function normalizeSettlementItem(
 }
 
 export type CreateSettlementRequest = {
+  id: string
   name: string
   items: SettlementItemWire[]
   ownerName?: string

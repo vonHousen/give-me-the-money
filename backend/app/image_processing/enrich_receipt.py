@@ -17,8 +17,7 @@ EXAMPLE_IMAGES = [
     "gimbap.jpeg",
     "kimchi.jpg",
     "kimchi.jpg",
-    "kimchi.jpg",
-    "kimchi.jpg",
+    "fries.jpg",
     "kimchi.jpg",
 ]
 

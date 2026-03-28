@@ -6,6 +6,7 @@ import { SwipeCard, type SwipeCardHandle } from '@/components/SwipeCard'
 import { QuantityPickOverlay } from '@/components/QuantityPickOverlay'
 import { CurrencyDisplay } from '@/components/CurrencyDisplay'
 import {
+  getSettlementApiBaseUrl,
   getSettlementForSwipe,
   markSwipeComplete,
   recordItemClaim,
@@ -58,6 +59,25 @@ function ItemCard({ item, currencyCode }: { item: SettlementItemWire; currencyCo
       </div>
     </div>
   )
+}
+
+function ItemImage({ itemId, alt, className }: { itemId: string; alt: string; className: string }) {
+  const [src, setSrc] = useState<string | null>(null)
+
+  useEffect(() => {
+    const url = `${getSettlementApiBaseUrl()}/image/${itemId}`
+    fetch(url)
+      .then((r) => r.json())
+      .then((data: { image_b64?: string }) => {
+        if (data.image_b64) {
+          setSrc(`data:image/jpeg;base64,${data.image_b64}`)
+        }
+      })
+      .catch(() => {})
+  }, [itemId])
+
+  if (!src) return null
+  return <img src={src} alt={alt} className={className} />
 }
 
 export default function Swipe() {
@@ -246,6 +266,80 @@ export default function Swipe() {
             topCardKey={`${current.id}-${swipeEpoch}`}
             onSwipe={handleCardSwipe}
             className="w-full"
+            behindChildren={
+              nextItem ? (
+                <div className="aspect-[3/4] flex flex-col">
+                  <div className="flex-grow bg-ds-surface-container-high relative overflow-hidden">
+                    <ItemImage
+                      itemId={nextItem.id}
+                      alt={nextItem.name}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center text-ds-on-surface-variant opacity-15 font-headline text-6xl font-extrabold select-none">
+                      🍽
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+                    <div className="absolute bottom-3 left-4 right-4">
+                      <p className="font-headline font-bold text-sm text-white/90 line-clamp-2 drop-shadow-md">
+                        {nextItem.name}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-ds-surface-container-lowest dark:bg-ds-surface-container">
+                    <p className="font-label text-[9px] font-bold uppercase tracking-widest text-ds-on-surface-variant/70">
+                      Up next
+                    </p>
+                  </div>
+                </div>
+              ) : undefined
+            }
+          >
+            <div className="aspect-[3/4] flex flex-col">
+              <div className="flex-grow bg-ds-surface-container-high relative overflow-hidden">
+                <ItemImage
+                  itemId={current.id}
+                  alt={current.name}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 flex items-center justify-center text-ds-on-surface-variant opacity-20 font-headline text-8xl font-extrabold select-none">
+                  🍽
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-transparent" />
+
+                <div className="absolute top-5 left-5 flex flex-wrap gap-2">
+                  <span className="px-3 py-1.5 bg-ds-surface-container-lowest/90 backdrop-blur-md rounded-full shadow-sm text-[9px] font-bold uppercase tracking-[0.15em] text-ds-primary">
+                    {tagForIndex}
+                  </span>
+                  <span className="px-3 py-1.5 bg-ds-primary/90 backdrop-blur-md rounded-full shadow-sm text-[9px] font-bold uppercase tracking-[0.15em] text-ds-on-primary">
+                    ×{lineQty} on bill
+                  </span>
+                </div>
+
+                <div className="absolute bottom-4 inset-x-0 flex justify-center pointer-events-none opacity-25">
+                  <span className="font-label text-[9px] font-bold tracking-[0.3em] uppercase text-white">
+                    ← swipe to decide →
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-4 bg-ds-surface-container-lowest dark:bg-ds-surface-container">
+                <div>
+                  <h2 className="font-headline font-extrabold text-2xl text-ds-on-surface tracking-tight leading-tight">
+                    {current.name}
+                  </h2>
+                  <p className="font-body text-sm text-ds-on-surface-variant mt-1.5 leading-relaxed">
+                    Swipe right if this is yours, left if not
+                    {lineQty > 1 ? ' — then choose how many.' : '.'}
+                  </p>
+                  <p className="font-body text-xs text-ds-on-surface-variant/90 mt-2 tabular-nums">
+                    Unit ${unitLabel.toFixed(2)}
+                    {lineQty > 1 ? ` · line total below` : null}
+                  </p>
+                </div>
+                <CurrencyDisplay amount={current.price} className="justify-start scale-75 origin-left" />
+              </div>
+            </div>
             behindSlots={behindSlots.length > 0 ? behindSlots : undefined}
           >
             <ItemCard item={current} currencyCode={currencyCode} />
