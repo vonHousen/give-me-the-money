@@ -8,10 +8,11 @@ import {
   mockRecordItemClaim,
   type SettlementStatusParticipant,
 } from '@/lib/settlementMockStore'
-import type {
-  CreateSettlementRequest,
-  SettlementResponse,
-  SettlementSummaryPayload,
+import {
+  normalizeSettlementItem,
+  type CreateSettlementRequest,
+  type SettlementResponse,
+  type SettlementSummaryPayload,
 } from '@/lib/settlementTypes'
 
 export type {
@@ -22,6 +23,7 @@ export type {
   SettlementSummaryPayload,
   SettlementSummaryPerson,
 } from '@/lib/settlementTypes'
+export { normalizeSettlementItem } from '@/lib/settlementTypes'
 
 export type { SettlementStatusParticipant } from '@/lib/settlementMockStore'
 
@@ -93,19 +95,19 @@ export async function recordItemClaim(
   settlementId: string,
   participantId: string,
   itemId: string,
-  claimed: boolean,
+  quantityClaimed: number,
 ): Promise<void> {
   const base = getSettlementApiBaseUrl()
   if (!base) {
     await delay()
-    mockRecordItemClaim(settlementId, participantId, itemId, claimed)
+    mockRecordItemClaim(settlementId, participantId, itemId, quantityClaimed)
     return
   }
   const url = `${base}/settlements/${encodeURIComponent(settlementId)}/claims`
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ participantId, itemId, claimed }),
+    body: JSON.stringify({ participantId, itemId, quantityClaimed }),
   })
   if (!res.ok) {
     const text = await res.text().catch(() => '')
@@ -167,7 +169,7 @@ export async function getSettlementForSwipe(settlementId: string): Promise<Settl
     return {
       id: rec.id,
       name: rec.name,
-      items: rec.items.map((i) => ({ ...i })),
+      items: rec.items.map((i) => normalizeSettlementItem(i)),
       users: rec.participants.map((p) => ({ id: p.id, name: p.name })),
       assignments: { ...rec.assignments },
     }
@@ -177,7 +179,11 @@ export async function getSettlementForSwipe(settlementId: string): Promise<Settl
   if (!res.ok) {
     return null
   }
-  return res.json() as Promise<SettlementResponse>
+  const data = (await res.json()) as SettlementResponse
+  return {
+    ...data,
+    items: data.items.map((i) => normalizeSettlementItem(i)),
+  }
 }
 
 async function delay(): Promise<void> {
@@ -202,5 +208,9 @@ async function postSettlement(
         : `Create settlement failed (${res.status})`,
     )
   }
-  return res.json() as Promise<SettlementResponse>
+  const data = (await res.json()) as SettlementResponse
+  return {
+    ...data,
+    items: data.items.map((i) => normalizeSettlementItem(i)),
+  }
 }

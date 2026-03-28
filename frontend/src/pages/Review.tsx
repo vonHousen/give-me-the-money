@@ -6,7 +6,7 @@ import { PageLayout } from '@/components/PageLayout'
 import { Button } from '@/components/ui/button'
 import { createSettlement } from '@/lib/settlementApi'
 import { markSettlementOwnerSession } from '@/lib/settlementSession'
-import { roundMoney } from '@/lib/utils'
+import { randomUuid, roundMoney } from '@/lib/utils'
 import type { ReviewLocationState } from '@/pages/Scan'
 
 export type ReviewLine = {
@@ -57,7 +57,7 @@ export default function Review() {
     setRows((prev) => [
       ...prev,
       {
-        id: crypto.randomUUID(),
+        id: randomUuid(),
         name: '',
         unitPrice: 0,
         quantity: 1,
@@ -80,6 +80,8 @@ export default function Review() {
           id: r.id,
           name: r.name.trim(),
           price: lineSubtotal(r),
+          quantity: r.quantity,
+          unitPrice: roundMoney(r.unitPrice),
         })),
       })
       const ownerUser = res.users[0]
