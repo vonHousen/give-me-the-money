@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import base64
-import json
 import mimetypes
 import sys
+from decimal import Decimal
 from pathlib import Path
 
 import typer
+from rich.console import Console
+from rich.table import Table
 
 # Ensure local app imports work when invoked as a script.
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -16,11 +18,16 @@ if str(REPO_ROOT) not in sys.path:
 from app.image_processing.parse_receipt import parse_receipt
 
 app = typer.Typer(add_completion=False, help="Parse a receipt image and display parsed line items.")
+console = Console()
 
 
 def _detect_mime_type(image_path: Path) -> str:
     guessed, _ = mimetypes.guess_type(str(image_path))
     return guessed or "image/jpeg"
+
+
+def _format_money(value: Decimal) -> str:
+    return f"{value:.2f}"
 
 
 @app.command()
@@ -34,19 +41,28 @@ def main(
 
     result = parse_receipt(img_b64=img_b64, mime_type=mime_type)
 
-    typer.echo(f"currency_code: {result.currency_code}")
+    console.rule("[bold cyan]Receipt Parse Result[/bold cyan]")
+    console.print(f"[bold]File:[/bold] {image_path}")
+    console.print(f"[bold]Currency:[/bold] {result.currency_code}")
+
     if not result.rows:
-        typer.echo("rows: []")
+        console.print("[yellow]No rows found.[/yellow]")
     else:
-        typer.echo("rows:")
+        table = Table(title=f"Extracted Fields ({len(result.rows)} rows)", header_style="bold magenta")
+        table.add_column("#", justify="right")
+        table.add_column("item_name")
+        table.add_column("item_count", justify="right")
+        table.add_column("total_cost", justify="right")
+
         for idx, row in enumerate(result.rows, start=1):
-            typer.echo(
-                f"  {idx}. item_name={row.item_name!r}, "
-                f"item_count={row.item_count}, total_cost={row.total_cost}"
+            table.add_row(
+                str(idx),
+                row.item_name,
+                str(row.item_count),
+                _format_money(row.total_cost),
             )
 
-    typer.echo("\njson:")
-    typer.echo(json.dumps(result.model_dump(), indent=2, default=str))
+        console.print(table)
 
 
 if __name__ == "__main__":
