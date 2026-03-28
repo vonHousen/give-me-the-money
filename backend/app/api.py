@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from app.database.settlement_repository import SettlementRepository
 from app.image_processing import parse_receipt
 from app.image_processing.enrich_receipt import DATA_DIR, enrich
+from app.models import Settlement
 from app.models import Item, ItemBase, Settlement
 from app.services import settle
 
@@ -141,7 +142,7 @@ def finish_settlement(id: UUID) -> FinishResponse:
     try:
         return settle(settlement)
     except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e)) from None
+        raise HTTPException(status_code=422, detail=str(e)) from e
 
 
 @router.get("/settlements/{id}/status", response_model=StatusResponse)

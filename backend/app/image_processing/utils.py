@@ -47,9 +47,7 @@ def log_extracted_restaurant_attributes(
         "nip": parsed_receipt.nip,
     }
     extracted = {
-        key: value
-        for key, value in optional_attributes.items()
-        if value and value.strip()
+        key: value for key, value in optional_attributes.items() if value and value.strip()
     }
     if extracted:
         LOGGER.info(f"Receipt restaurant attributes extracted: {extracted}")
