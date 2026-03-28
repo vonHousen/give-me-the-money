@@ -9,9 +9,11 @@ from pydantic import ValidationError
 from app.image_processing import response_formats
 from app.image_processing.exceptions import ImageProcessingParseError
 from app.image_processing.model import ProcessedReceipt
+from app.logging import get_logger
 
 DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite-preview"
 DEFAULT_CURRENCY_CODE = "PLN"
+LOGGER = get_logger(__name__)
 
 
 def extract_payload_and_mime(img_b64: str, mime_type: str) -> tuple[str, str]:
@@ -60,6 +62,15 @@ def to_model_processed_receipt(
             "currency_code": currency_code,
         },
     )
+
+    if raw_receipt.total_value == parsed.calculated_total:
+        LOGGER.info("✅ success: receipt total matches calculated_total")
+    else:
+        LOGGER.warning(
+            f"❌ total mismatch: raw total_value={raw_receipt.total_value} "
+            f"calculated_total={parsed.calculated_total}",
+        )
+
     return parsed
 
 

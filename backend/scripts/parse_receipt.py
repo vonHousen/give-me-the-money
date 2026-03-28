@@ -2,12 +2,17 @@ from __future__ import annotations
 
 import base64
 import mimetypes
+import sys
 from decimal import Decimal
 from pathlib import Path
 
 import typer
 from rich.console import Console
 from rich.table import Table
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.image_processing.parse_receipt import parse_receipt
 from app.logging import configure_logging
