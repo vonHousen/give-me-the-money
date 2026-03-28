@@ -96,7 +96,6 @@ def test_parse_receipt_when_raw_base64_input_expect_processed_receipt(
     parsed = ProcessedReceipt.model_validate(
         {
             "rows": [{"item_name": "Tomato", "item_count": 2, "total_cost": "12.50"}],
-            "currency_code": "pln",
         },
     )
     _install_fake_genai(monkeypatch, parsed=parsed, capture=capture)
@@ -123,7 +122,6 @@ def test_parse_receipt_when_data_url_input_expect_mime_type_extracted(
     parsed = ProcessedReceipt.model_validate(
         {
             "rows": [{"item_name": "Coffee", "item_count": 1, "total_cost": "9.99"}],
-            "currency_code": "PLN",
         },
     )
     _install_fake_genai(monkeypatch, parsed=parsed, capture=capture)
@@ -154,7 +152,7 @@ def test_parse_receipt_when_gemini_fails_expect_upstream_error(
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
     payload = base64.b64encode(b"fake image bytes").decode("utf-8")
     capture: dict[str, Any] = {}
-    parsed = ProcessedReceipt.model_validate({"rows": [], "currency_code": "PLN"})
+    parsed = ProcessedReceipt.model_validate({"rows": []})
     _install_fake_genai(monkeypatch, parsed=parsed, capture=capture, should_fail=True)
 
     # Act / Assert
@@ -175,7 +173,6 @@ def test_parse_receipt_when_rows_are_ambiguous_expect_parse_error(
             {"item_name": "", "item_count": 1, "total_cost": "15.00"},
             {"item_name": "Soup", "item_count": 0, "total_cost": "10.00"},
         ],
-        "currency_code": "EUR",
     }
     _install_fake_genai(monkeypatch, parsed=parsed, capture=capture)
 

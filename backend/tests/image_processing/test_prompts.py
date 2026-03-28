@@ -10,4 +10,4 @@ def test_prompt_when_building_receipt_prompt_expect_required_instructions_presen
     # Assert
     assert "Extract line items from this receipt image." in prompt
     assert "Exclude totals, subtotals, taxes, tips" in prompt
-    assert '"currency_code": "PLN"' in prompt
+    assert '"rows": [{"item_name": "string", "item_count": 1, "total_cost": "12.34"}]' in prompt

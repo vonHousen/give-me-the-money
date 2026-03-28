@@ -165,5 +165,4 @@ def parse_receipt(img_b64: str, mime_type: str = "image/jpeg") -> ProcessedRecei
     if warnings:
         LOGGER.debug("parse_receipt warnings: %s", warnings)
 
-    currency_code = raw.currency_code or DEFAULT_CURRENCY_CODE
-    return ProcessedReceipt(rows=rows, currency_code=currency_code)
+    return ProcessedReceipt(rows=rows, currency_code=DEFAULT_CURRENCY_CODE)
