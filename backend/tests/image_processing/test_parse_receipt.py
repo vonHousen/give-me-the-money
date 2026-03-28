@@ -81,7 +81,9 @@ def _install_fake_genai(
 ) -> None:
     fake_genai_module = _FakeGenaiModule(parsed=parsed, capture=capture, should_fail=should_fail)
     fake_genai_module.Client = fake_genai_module.build_client_class()
-    monkeypatch.setattr(parse_receipt_module, "_load_genai_modules", lambda: (fake_genai_module, _FakeTypesModule))
+    monkeypatch.setattr(
+        parse_receipt_module, "_load_genai_modules", lambda: (fake_genai_module, _FakeTypesModule)
+    )
 
 
 def test_parse_receipt_when_raw_base64_input_expect_processed_receipt(
@@ -119,7 +121,10 @@ def test_parse_receipt_when_data_url_input_expect_mime_type_extracted(
     data_url = f"data:image/png;base64,{payload}"
     capture: dict[str, Any] = {}
     parsed = ProcessedReceipt.model_validate(
-        {"rows": [{"item_name": "Coffee", "item_count": 1, "total_cost": "9.99"}], "currency_code": "PLN"},
+        {
+            "rows": [{"item_name": "Coffee", "item_count": 1, "total_cost": "9.99"}],
+            "currency_code": "PLN",
+        },
     )
     _install_fake_genai(monkeypatch, parsed=parsed, capture=capture)
 

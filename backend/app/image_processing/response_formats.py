@@ -7,8 +7,9 @@ from pydantic import BaseModel, Field
 
 class ReceiptRow(BaseModel):
     """A single row of an item purchased on a receipt."""
+
     item_name: str = Field(
-        min_length=1, 
+        min_length=1,
         description="The name of the item purchased on the receipt.",
     )
     item_count: int = Field(
@@ -23,6 +24,7 @@ class ReceiptRow(BaseModel):
 
 class ProcessedReceipt(BaseModel):
     """A processed receipt containing the items purchased and the currency code."""
+
     STRUCTURED_OUTPUT_HINT: ClassVar[str] = dedent("""
         Return JSON only with this shape:
         {
@@ -43,6 +45,7 @@ class ProcessedReceipt(BaseModel):
 # TODO is it used?
 class ParseWarning(BaseModel):
     """A warning message for a row that was skipped during parsing."""
+
     message: str = Field(
         description="The warning message for the row that was skipped during parsing.",
     )

@@ -127,7 +127,7 @@ def _normalize_rows(
 def parse_receipt(img_b64: str, mime_type: str = "image/jpeg") -> ProcessedReceipt:
     """
     Parse a receipt image into a processed receipt.
-    
+
     Args:
         img_b64: The base64 encoded receipt image.
         mime_type: The mime type of the receipt image.

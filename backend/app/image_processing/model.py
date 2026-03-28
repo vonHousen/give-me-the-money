@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, Field, field_validator
 
+
 class ReceiptRow(BaseModel):
     item_name: str = Field(min_length=1)
     item_count: int = Field(ge=1)
