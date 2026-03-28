@@ -125,6 +125,81 @@ def test_get_settlement_returns_correct_one() -> None:
     assert response.json()["name"] == "Second"
 
 
+# POST /settlements/{id}/finish
+
+
+def test_finish_settlement_returns_200() -> None:
+    created = client.post(
+        "/settlements",
+        json={"name": "Friday dinner", "items": [{"name": "Pizza", "price": 10.0}]},
+    ).json()
+
+    response = client.post(f"/settlements/{created['id']}/finish")
+
+    assert response.status_code == 200
+
+
+def test_finish_settlement_returns_list() -> None:
+    created = client.post(
+        "/settlements",
+        json={"name": "Friday dinner", "items": [{"name": "Pizza", "price": 10.0}]},
+    ).json()
+
+    response = client.post(f"/settlements/{created['id']}/finish")
+
+    assert isinstance(response.json(), list)
+
+
+def test_finish_settlement_not_found() -> None:
+    response = client.post("/settlements/00000000-0000-0000-0000-000000000000/finish")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Settlement not found"}
+
+
+# GET /settlements/{id}/status
+
+
+def test_get_settlement_status_returns_empty_list_when_no_users() -> None:
+    created = client.post(
+        "/settlements",
+        json={"name": "Friday dinner", "items": [{"name": "Pizza", "price": 10.0}]},
+    ).json()
+
+    response = client.get(f"/settlements/{created['id']}/status")
+
+    assert response.status_code == 200
+    assert response.json() == {"users": []}
+
+
+def test_get_settlement_status_returns_joined_user_names() -> None:
+    created = client.post(
+        "/settlements",
+        json={"name": "Friday dinner", "items": [{"name": "Pizza", "price": 10.0}]},
+    ).json()
+    item_id = created["items"][0]["id"]
+    client.put(
+        f"/settlements/{created['id']}/join",
+        json={"user_name": "Alice", "item_ids": [item_id]},
+    )
+    client.put(
+        f"/settlements/{created['id']}/join",
+        json={"user_name": "Bob", "item_ids": [item_id]},
+    )
+
+    response = client.get(f"/settlements/{created['id']}/status")
+
+    assert response.status_code == 200
+    assert response.json() == {"users": ["Alice", "Bob"]}
+
+
+def test_get_settlement_status_not_found() -> None:
+    response = client.get("/settlements/00000000-0000-0000-0000-000000000000/status")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Settlement not found"}
+
+
 # PUT /settlements/{id}/join
 
 ITEM_UUID_1 = "00000000-0000-0000-0000-000000000001"
