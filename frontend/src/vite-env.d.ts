@@ -12,3 +12,19 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+/* BarcodeDetector — Shape Detection API (Chrome 83+, Safari 17.2+) */
+interface BarcodeDetectorOptions {
+  formats?: string[]
+}
+interface DetectedBarcode {
+  rawValue: string
+  format: string
+  boundingBox: DOMRectReadOnly
+  cornerPoints: Array<{ x: number; y: number }>
+}
+declare class BarcodeDetector {
+  constructor(options?: BarcodeDetectorOptions)
+  detect(image: ImageBitmapSource): Promise<DetectedBarcode[]>
+  static getSupportedFormats(): Promise<string[]>
+}
