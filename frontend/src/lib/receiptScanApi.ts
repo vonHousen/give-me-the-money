@@ -4,6 +4,7 @@ export type AnalyzeRequest = {
 }
 
 export type AnalyzeItemWire = {
+  id: string
   name: string
   price: number
   count: number
@@ -18,11 +19,11 @@ export type AnalyzeResponse = {
 const MOCK_DELAY_MS = 300
 
 const MOCK_ITEMS: AnalyzeItemWire[] = [
-  { name: 'Garden Harvest Bowl', price: 18.5, count: 1 },
-  { name: 'Truffle Fries', price: 9.0, count: 1 },
-  { name: 'Lemon Tart', price: 8.0, count: 1 },
-  { name: 'Sparkling Water', price: 7.5, count: 3 },
-  { name: 'Service Charge (10%)', price: 4.3, count: 1 },
+  { id: '00000000-0000-0000-0000-000000000001', name: 'Garden Harvest Bowl', price: 18.5, count: 1 },
+  { id: '00000000-0000-0000-0000-000000000002', name: 'Truffle Fries', price: 9.0, count: 1 },
+  { id: '00000000-0000-0000-0000-000000000003', name: 'Lemon Tart', price: 8.0, count: 1 },
+  { id: '00000000-0000-0000-0000-000000000004', name: 'Sparkling Water', price: 7.5, count: 3 },
+  { id: '00000000-0000-0000-0000-000000000005', name: 'Service Charge (10%)', price: 4.3, count: 1 },
 ]
 
 /** Empty or unset -> use built-in mock (no HTTP). */

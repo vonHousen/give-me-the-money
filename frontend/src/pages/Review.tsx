@@ -27,7 +27,7 @@ const SEED_ROWS: ReviewLine[] = [
 
 function analyzeItemsToRows(items: AnalyzeItemWire[]): ReviewLine[] {
   return items.map((item) => ({
-    id: randomUuid(),
+    id: item.id,
     name: item.name,
     unitPrice: roundMoney(item.count > 0 ? item.price / item.count : item.price),
     quantity: item.count,

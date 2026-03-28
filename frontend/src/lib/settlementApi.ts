@@ -53,7 +53,7 @@ export async function createSettlement(
     await delay()
     const wire = mockCreateSettlement({
       name: body.name,
-      items: body.items.map((i) => ({ name: i.name, price: i.price, count: i.quantity })),
+      items: body.items.map((i) => ({ id: i.id, name: i.name, price: i.price, count: i.quantity })),
       owner_name: ownerName,
     })
     return backendSettlementToResponse(wire)
@@ -64,7 +64,7 @@ export async function createSettlement(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       name: body.name,
-      items: body.items.map((i) => ({ name: i.name, price: i.price, count: i.quantity })),
+      items: body.items.map((i) => ({ id: i.id, name: i.name, price: i.price, count: i.quantity })),
       owner_name: ownerName,
     }),
   })

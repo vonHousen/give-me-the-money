@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 
 class ItemBase(BaseModel):
+    id: UUID | None = None
     name: str
     price: float
     count: int = 1
