@@ -1,0 +1,203 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  * {
+    border-color: var(--border);
+    @apply border-border outline-ring/50;
+  }
+  body {
+    margin: 0;
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: 'Geist Variable', sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+
+  /* Stitch / Equitas tokens — referenced by @theme so utilities use var() (dark mode works) */
+  --ds-primary: #006b5f;
+  --ds-primary-dim: #005e53;
+  --ds-on-primary: #e3fff7;
+  --ds-primary-container: #97f3e2;
+  --ds-on-primary-container: #005d51;
+  --ds-secondary: #1c6d25;
+  --ds-on-secondary: #eaffe2;
+  --ds-secondary-container: #a3f69c;
+  --ds-on-secondary-container: #065f18;
+  --ds-tertiary: #ba1e21;
+  --ds-on-tertiary: #fff7f6;
+  --ds-tertiary-container: #fd5049;
+  --ds-surface: #f8f9fa;
+  --ds-surface-container-lowest: #ffffff;
+  --ds-surface-container-low: #f1f4f5;
+  --ds-surface-container: #ebeef0;
+  --ds-surface-container-high: #e5e9eb;
+  --ds-surface-container-highest: #dee3e6;
+  --ds-surface-variant: #dee3e6;
+  --ds-on-surface: #2d3335;
+  --ds-on-surface-variant: #5a6062;
+  --ds-outline: #767c7e;
+  --ds-outline-variant: #adb3b5;
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+
+  --ds-primary: #52d7c5;
+  --ds-primary-dim: #3ec9b7;
+  --ds-on-primary: #00483f;
+  --ds-surface: #191c1d;
+  --ds-surface-container-lowest: #0c0f10;
+  --ds-surface-container-low: #1f2324;
+  --ds-surface-container: #232729;
+  --ds-surface-container-high: #2d3133;
+  --ds-surface-container-highest: #383c3e;
+  --ds-on-surface: #e2e3e4;
+  --ds-on-surface-variant: #bec4c6;
+  --ds-outline: #888f91;
+  --ds-outline-variant: #404849;
+}
+
+/* ── Stitch / Equitas Mobile Design Tokens (Tailwind theme → var(--ds-*)) ── */
+@theme inline {
+  /* Fonts */
+  --font-headline: "Manrope", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-label: "Inter", sans-serif;
+
+  --color-ds-primary: var(--ds-primary);
+  --color-ds-primary-dim: var(--ds-primary-dim);
+  --color-ds-on-primary: var(--ds-on-primary);
+  --color-ds-primary-container: var(--ds-primary-container);
+  --color-ds-on-primary-container: var(--ds-on-primary-container);
+  --color-ds-secondary: var(--ds-secondary);
+  --color-ds-on-secondary: var(--ds-on-secondary);
+  --color-ds-secondary-container: var(--ds-secondary-container);
+  --color-ds-on-secondary-container: var(--ds-on-secondary-container);
+  --color-ds-tertiary: var(--ds-tertiary);
+  --color-ds-on-tertiary: var(--ds-on-tertiary);
+  --color-ds-tertiary-container: var(--ds-tertiary-container);
+  --color-ds-surface: var(--ds-surface);
+  --color-ds-surface-container-lowest: var(--ds-surface-container-lowest);
+  --color-ds-surface-container-low: var(--ds-surface-container-low);
+  --color-ds-surface-container: var(--ds-surface-container);
+  --color-ds-surface-container-high: var(--ds-surface-container-high);
+  --color-ds-surface-container-highest: var(--ds-surface-container-highest);
+  --color-ds-surface-variant: var(--ds-surface-variant);
+  --color-ds-on-surface: var(--ds-on-surface);
+  --color-ds-on-surface-variant: var(--ds-on-surface-variant);
+  --color-ds-outline: var(--ds-outline);
+  --color-ds-outline-variant: var(--ds-outline-variant);
+}
