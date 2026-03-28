@@ -110,7 +110,7 @@ async def analyze(body: AnalyzeRequest, background_tasks: BackgroundTasks) -> An
 
 @router.get("/image/{image_id}", response_model=ImageResponse)
 def get_image(image_id: UUID) -> ImageResponse:
-    path = DATA_DIR / f"{image_id}.png"
+    path = DATA_DIR / f"{image_id}.jpg"
     if not path.exists():
         raise HTTPException(status_code=404, detail="Image not found")
     return ImageResponse(image_b64=base64.b64encode(path.read_bytes()).decode())
