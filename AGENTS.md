@@ -2,6 +2,12 @@
 
 This file captures the working conventions for contributors/agents in this repo.
 
+## Frontend (`frontend/`)
+
+- Package manager: **Bun** (see `frontend/package.json` → `packageManager`)
+- From `frontend/`: `bun install`, `bun run dev`, `bun run build`, `bun run test`
+- Prefer `bun run <script>` over `npm` / `npx` for this app
+
 ## Backend Standards
 
 - Target Python: `3.13`

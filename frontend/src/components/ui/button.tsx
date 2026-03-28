@@ -18,7 +18,7 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
-        pill: "rounded-full px-8 py-3 h-auto bg-gradient-to-r from-ds-primary to-ds-primary-dim text-ds-on-primary font-semibold hover:opacity-90 active:opacity-80 dark:from-ds-primary dark:to-ds-primary-dim",
+        pill: "rounded-full px-8 py-3 h-auto bg-gradient-to-r from-ds-primary to-ds-primary-dim text-ds-on-primary font-semibold hover:opacity-90 active:opacity-80",
         "pill-ghost": "rounded-full px-8 py-3 h-auto border border-ds-outline text-ds-on-surface font-semibold hover:bg-ds-surface-container-low active:bg-ds-surface-container dark:border-ds-outline-variant",
       },
       size: {

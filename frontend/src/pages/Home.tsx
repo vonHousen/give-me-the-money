@@ -20,7 +20,7 @@ export default function Home() {
   const { isDark, toggle } = useDarkMode()
 
   return (
-    <div className="min-h-screen bg-ds-surface dark:bg-ds-surface flex flex-col items-center justify-center px-6 relative overflow-hidden">
+    <div className="min-h-screen bg-ds-surface flex flex-col items-center justify-center px-6 relative overflow-hidden">
       {/* Ambient glow blobs */}
       <div className="absolute -top-32 -right-32 w-96 h-96 bg-ds-primary rounded-full blur-[120px] opacity-15 pointer-events-none" />
       <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-ds-secondary-container rounded-full blur-[120px] opacity-20 pointer-events-none" />

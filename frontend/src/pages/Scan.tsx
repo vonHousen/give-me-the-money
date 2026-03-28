@@ -8,7 +8,7 @@ export default function Scan() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen bg-ds-surface dark:bg-ds-surface">
+    <div className="min-h-screen bg-ds-surface">
       <TopAppBar />
       <PageLayout className="flex flex-col gap-6">
         {/* Page header */}

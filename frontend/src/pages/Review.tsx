@@ -20,7 +20,7 @@ export default function Review() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen bg-ds-surface dark:bg-ds-surface">
+    <div className="min-h-screen bg-ds-surface">
       <TopAppBar
         action={
           <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-ds-surface-container transition-colors">

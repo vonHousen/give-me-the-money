@@ -3,39 +3,14 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --border: 214.3 31.8% 91.4%;
-    --radius: 0.5rem;
-  }
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --border: 217.2 32.6% 17.5%;
-  }
   * {
-    border-color: hsl(var(--border));
+    border-color: var(--border);
     @apply border-border outline-ring/50;
   }
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
     margin: 0;
     @apply bg-background text-foreground;
   }
@@ -120,6 +95,31 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Stitch / Equitas tokens — referenced by @theme so utilities use var() (dark mode works) */
+  --ds-primary: #006b5f;
+  --ds-primary-dim: #005e53;
+  --ds-on-primary: #e3fff7;
+  --ds-primary-container: #97f3e2;
+  --ds-on-primary-container: #005d51;
+  --ds-secondary: #1c6d25;
+  --ds-on-secondary: #eaffe2;
+  --ds-secondary-container: #a3f69c;
+  --ds-on-secondary-container: #065f18;
+  --ds-tertiary: #ba1e21;
+  --ds-on-tertiary: #fff7f6;
+  --ds-tertiary-container: #fd5049;
+  --ds-surface: #f8f9fa;
+  --ds-surface-container-lowest: #ffffff;
+  --ds-surface-container-low: #f1f4f5;
+  --ds-surface-container: #ebeef0;
+  --ds-surface-container-high: #e5e9eb;
+  --ds-surface-container-highest: #dee3e6;
+  --ds-surface-variant: #dee3e6;
+  --ds-on-surface: #2d3335;
+  --ds-on-surface-variant: #5a6062;
+  --ds-outline: #767c7e;
+  --ds-outline-variant: #adb3b5;
 }
 
 .dark {
@@ -154,66 +154,50 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  --ds-primary: #52d7c5;
+  --ds-primary-dim: #3ec9b7;
+  --ds-on-primary: #00483f;
+  --ds-surface: #191c1d;
+  --ds-surface-container-lowest: #0c0f10;
+  --ds-surface-container-low: #1f2324;
+  --ds-surface-container: #232729;
+  --ds-surface-container-high: #2d3133;
+  --ds-surface-container-highest: #383c3e;
+  --ds-on-surface: #e2e3e4;
+  --ds-on-surface-variant: #bec4c6;
+  --ds-outline: #888f91;
+  --ds-outline-variant: #404849;
 }
 
-/* ── Stitch / Equitas Mobile Design Tokens ── */
+/* ── Stitch / Equitas Mobile Design Tokens (Tailwind theme → var(--ds-*)) ── */
 @theme inline {
   /* Fonts */
   --font-headline: "Manrope", sans-serif;
   --font-body: "Inter", sans-serif;
   --font-label: "Inter", sans-serif;
 
-  /* Primary (teal) */
-  --color-ds-primary: #006b5f;
-  --color-ds-primary-dim: #005e53;
-  --color-ds-on-primary: #e3fff7;
-  --color-ds-primary-container: #97f3e2;
-  --color-ds-on-primary-container: #005d51;
-
-  /* Secondary (green) */
-  --color-ds-secondary: #1c6d25;
-  --color-ds-on-secondary: #eaffe2;
-  --color-ds-secondary-container: #a3f69c;
-  --color-ds-on-secondary-container: #065f18;
-
-  /* Tertiary (red) */
-  --color-ds-tertiary: #ba1e21;
-  --color-ds-on-tertiary: #fff7f6;
-  --color-ds-tertiary-container: #fd5049;
-
-  /* Surface hierarchy */
-  --color-ds-surface: #f8f9fa;
-  --color-ds-surface-container-lowest: #ffffff;
-  --color-ds-surface-container-low: #f1f4f5;
-  --color-ds-surface-container: #ebeef0;
-  --color-ds-surface-container-high: #e5e9eb;
-  --color-ds-surface-container-highest: #dee3e6;
-  --color-ds-surface-variant: #dee3e6;
-
-  /* On-surface */
-  --color-ds-on-surface: #2d3335;
-  --color-ds-on-surface-variant: #5a6062;
-
-  /* Outline */
-  --color-ds-outline: #767c7e;
-  --color-ds-outline-variant: #adb3b5;
-}
-
-/* Dark mode overrides for stitch tokens.
-   These override CSS custom properties on <html class="dark">;
-   they work via CSS inheritance alongside the @custom-variant dark selector above. */
-.dark {
-  --color-ds-primary: #52d7c5;
-  --color-ds-primary-dim: #3ec9b7;
-  --color-ds-on-primary: #00483f;
-  --color-ds-surface: #191c1d;
-  --color-ds-surface-container-lowest: #0c0f10;
-  --color-ds-surface-container-low: #1f2324;
-  --color-ds-surface-container: #232729;
-  --color-ds-surface-container-high: #2d3133;
-  --color-ds-surface-container-highest: #383c3e;
-  --color-ds-on-surface: #e2e3e4;
-  --color-ds-on-surface-variant: #bec4c6;
-  --color-ds-outline: #888f91;
-  --color-ds-outline-variant: #404849;
+  --color-ds-primary: var(--ds-primary);
+  --color-ds-primary-dim: var(--ds-primary-dim);
+  --color-ds-on-primary: var(--ds-on-primary);
+  --color-ds-primary-container: var(--ds-primary-container);
+  --color-ds-on-primary-container: var(--ds-on-primary-container);
+  --color-ds-secondary: var(--ds-secondary);
+  --color-ds-on-secondary: var(--ds-on-secondary);
+  --color-ds-secondary-container: var(--ds-secondary-container);
+  --color-ds-on-secondary-container: var(--ds-on-secondary-container);
+  --color-ds-tertiary: var(--ds-tertiary);
+  --color-ds-on-tertiary: var(--ds-on-tertiary);
+  --color-ds-tertiary-container: var(--ds-tertiary-container);
+  --color-ds-surface: var(--ds-surface);
+  --color-ds-surface-container-lowest: var(--ds-surface-container-lowest);
+  --color-ds-surface-container-low: var(--ds-surface-container-low);
+  --color-ds-surface-container: var(--ds-surface-container);
+  --color-ds-surface-container-high: var(--ds-surface-container-high);
+  --color-ds-surface-container-highest: var(--ds-surface-container-highest);
+  --color-ds-surface-variant: var(--ds-surface-variant);
+  --color-ds-on-surface: var(--ds-on-surface);
+  --color-ds-on-surface-variant: var(--ds-on-surface-variant);
+  --color-ds-outline: var(--ds-outline);
+  --color-ds-outline-variant: var(--ds-outline-variant);
 }

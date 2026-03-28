@@ -38,8 +38,8 @@ bun run dev        # http://localhost:5173
 bun run dev        # start dev server
 bun run build      # typecheck + production build
 bun run preview    # serve production build locally
-bunx vitest run    # run tests once
-bunx vitest        # run tests in watch mode
+bun run test       # run tests once
+bun run test:watch # run tests in watch mode
 ```
 
 ## Routes

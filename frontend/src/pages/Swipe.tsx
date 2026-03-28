@@ -29,7 +29,7 @@ export default function Swipe() {
   if (!current) return null
 
   return (
-    <div className="min-h-screen bg-ds-surface dark:bg-ds-surface">
+    <div className="min-h-screen bg-ds-surface">
       {/* Ambient background glows for depth */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-ds-primary rounded-full blur-[120px] opacity-10" />

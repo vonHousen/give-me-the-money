@@ -28,7 +28,7 @@ export default function Summary() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen bg-ds-surface dark:bg-ds-surface">
+    <div className="min-h-screen bg-ds-surface">
       <TopAppBar />
       <PageLayout className="space-y-8">
         {/* Hero total */}
