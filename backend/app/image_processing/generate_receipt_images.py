@@ -186,6 +186,8 @@ async def enrich_processed_receipt_with_images_async(
                 context_model=context_model,
             )
 
+            LOGGER.info(f"Synthesized generation context: {context.model_dump()}.")
+
             if run_sync:
                 LOGGER.info("Generating receipt images in sequential mode")
                 rows_with_images = []
@@ -199,6 +201,7 @@ async def enrich_processed_receipt_with_images_async(
                         )
                     )
             else:
+                LOGGER.info("Generating receipt images in parallel mode")
                 tasks = [
                     _generate_row_image(
                         aclient=aclient,
