@@ -7,12 +7,23 @@ PROMPT_RECEIPT_PARSER = dedent(f"""
 
     {ProcessedReceipt.STRUCTURED_OUTPUT_HINT}
 
-    Rules:
-    - Include only purchasable line items.
-    - Exclude totals, subtotals, taxes, tips, discounts, balances, and payment method lines.
-    - Normalize item_count as integer count per line item.
-    - Keep total_cost as the line total amount for the item.
+    <hints>
+    - The receipt in the main part contains rows each representing single purchased item.
+    - The item's section contain columns from which you can extract certain fields:
+        - the first column from the left is item names;
+        - the second is the number of instances of that particular item (e.g. 3 x 9,99 => there were 3 instances);
+        - the last (first from the right) is the total cost of all instances of the particular item
+            with possible letter appended as a suffix - ignore that letter;
+        - to sum up: 'Napar imbirowy.A 3 x18,00 54,00A' means that there where 3 intances of 'Napar imbirowy' 
+            with a 18,00 price each and the total cost of all these instances is 54,00; 
+    </hints>
+
+
+    <rules>
+    - Process only the receipt part with the individual product listing.
+    - Ignore any other taxes, payment method lines, etc.
     - If uncertain, skip the row.
+    <rules/>
 """).strip()
 
 
