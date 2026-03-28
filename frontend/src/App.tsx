@@ -2,6 +2,8 @@ import { Routes, Route } from 'react-router-dom'
 import Home from '@/pages/Home'
 import Scan from '@/pages/Scan'
 import Review from '@/pages/Review'
+import Share from '@/pages/Share'
+import JoinSettlement from '@/pages/JoinSettlement'
 import Swipe from '@/pages/Swipe'
 import Summary from '@/pages/Summary'
 
@@ -11,6 +13,8 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/scan" element={<Scan />} />
       <Route path="/review" element={<Review />} />
+      <Route path="/share/:settlementId" element={<Share />} />
+      <Route path="/split/:settlementId" element={<JoinSettlement />} />
       <Route path="/swipe" element={<Swipe />} />
       <Route path="/summary" element={<Summary />} />
     </Routes>
