@@ -34,8 +34,7 @@ class ProcessedReceipt(BaseModel):
     """).strip()
 
     rows: list[ReceiptRow] = Field(default_factory=list)
-    total_value: Decimal | None = Field(
-        default=None,
+    total_value: Decimal = Field(
         ge=0,
         description="The grand total value for the whole receipt.",
     )
