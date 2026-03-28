@@ -1,5 +1,4 @@
 import json
-from decimal import Decimal
 from typing import Any
 
 from pydantic import ValidationError
@@ -7,7 +6,6 @@ from pydantic import ValidationError
 from app.image_processing.restaurant_web_search import response_formats as ws_response_formats
 from app.image_processing.restaurant_web_search.exceptions import RestaurantWebSearchParseError
 from app.image_processing.restaurant_web_search.models import (
-    MenuItem,
     RestaurantInfo,
     RestaurantMatch,
     RestaurantWebEnrichment,
@@ -58,27 +56,37 @@ def to_model_enrichment(
     if raw.match is not None:
         match = RestaurantMatch.model_validate(raw.match.model_dump())
 
-    items: list[MenuItem] = []
-    for item in raw.menu_items:
-        price: Decimal | None
-        if item.item_price is None:
-            price = None
-        else:
-            price = Decimal(str(item.item_price))
-        items.append(
-            MenuItem(
-                item_name=item.item_name,
-                item_price=price,
-                currency_code=item.currency_code,
-            )
-        )
-
     return RestaurantWebEnrichment(
         status="success",
         match=match,
-        menu_items=items,
         menu_source_urls=raw.menu_source_urls,
     )
+
+
+def coerce_menu_item_verification_response(
+    parsed_response: Any,
+) -> ws_response_formats.MenuItemVerificationResponse:
+    if parsed_response is None:
+        raise RestaurantWebSearchParseError("menu verification agent returned empty response")
+
+    try:
+        if isinstance(parsed_response, ws_response_formats.MenuItemVerificationResponse):
+            return parsed_response
+        if isinstance(parsed_response, str):
+            return ws_response_formats.MenuItemVerificationResponse.model_validate(
+                extract_json_object(parsed_response)
+            )
+        return ws_response_formats.MenuItemVerificationResponse.model_validate(parsed_response)
+    except ValidationError as exc:
+        raise RestaurantWebSearchParseError(
+            "menu verification output does not match expected schema"
+        ) from exc
+
+
+def menu_match_map_by_row_name(
+    response: ws_response_formats.MenuItemVerificationResponse,
+) -> dict[str, ws_response_formats.ReceiptRowMenuMatch]:
+    return {entry.row_item_name: entry for entry in response.matches}
 
 
 def summarize_enrichment(enrichment: RestaurantWebEnrichment) -> dict[str, Any]:
@@ -86,17 +94,5 @@ def summarize_enrichment(enrichment: RestaurantWebEnrichment) -> dict[str, Any]:
         "status": enrichment.status,
         "failure_reason": enrichment.failure_reason,
         "match": enrichment.match.model_dump() if enrichment.match else None,
-        "menu_items_count": len(enrichment.menu_items),
         "menu_source_urls": enrichment.menu_source_urls,
     }
-
-
-def menu_items_for_log(enrichment: RestaurantWebEnrichment) -> list[dict[str, Any]]:
-    return [
-        {
-            "item_name": item.item_name,
-            "item_price": str(item.item_price) if item.item_price is not None else None,
-            "currency_code": item.currency_code,
-        }
-        for item in enrichment.menu_items
-    ]

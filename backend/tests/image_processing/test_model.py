@@ -3,7 +3,13 @@ from decimal import Decimal
 import pytest
 from pydantic import ValidationError
 
-from app.image_processing.model import EnrichedRestaurantInfo, ProcessedReceipt, ReceiptRow
+from app.image_processing.model import (
+    EnrichedProcessedReceipt,
+    EnrichedReceiptRow,
+    EnrichedRestaurantInfo,
+    ProcessedReceipt,
+    ReceiptRow,
+)
 
 
 def test_receipt_row_when_valid_payload_expect_decimal_and_types_validated() -> None:
@@ -79,7 +85,6 @@ def test_enriched_lookup_info_when_web_data_present_expect_fields_available() ->
             "restaurant_address": "Main Street 10, Warsaw",
             "website_url": "https://example.com",
             "evidence_urls": ["https://example.com/about"],
-            "menu_items": [{"item_name": "Soup", "item_price": "12.00", "currency_code": "PLN"}],
             "menu_source_urls": ["https://example.com/menu"],
         }
     )
@@ -87,4 +92,53 @@ def test_enriched_lookup_info_when_web_data_present_expect_fields_available() ->
     assert enriched.restaurant_name == "Bistro XYZ"
     assert enriched.website_url == "https://example.com"
     assert len(enriched.evidence_urls) == 1
-    assert len(enriched.menu_items) == 1
+    assert len(enriched.menu_source_urls) == 1
+
+
+def test_enriched_processed_receipt_when_valid_payload_expect_calculated_total() -> None:
+    enriched = EnrichedProcessedReceipt.model_validate(
+        {
+            "rows": [
+                {
+                    "item_name": "Soup",
+                    "item_count": 1,
+                    "total_cost": "12.00",
+                    "is_menu_match": True,
+                    "matched_menu_item_name": "Soup of the day",
+                    "matched_menu_item_price": "12.00",
+                    "match_confidence": 0.92,
+                },
+                {
+                    "item_name": "Bread",
+                    "item_count": 1,
+                    "total_cost": "5.00",
+                    "is_menu_match": False,
+                    "matched_menu_item_name": None,
+                    "matched_menu_item_price": None,
+                    "match_confidence": None,
+                },
+            ],
+            "currency_code": "pln",
+            "restaurant_info": {"restaurant_name": "Bistro XYZ"},
+        }
+    )
+
+    assert enriched.currency_code == "PLN"
+    assert enriched.calculated_total == Decimal("17.00")
+    assert len(enriched.rows) == 2
+    assert enriched.rows[0].is_menu_match is True
+
+
+def test_enriched_receipt_row_when_confidence_out_of_range_expect_validation_error() -> None:
+    with pytest.raises(ValidationError):
+        EnrichedReceiptRow.model_validate(
+            {
+                "item_name": "Soup",
+                "item_count": 1,
+                "total_cost": "12.00",
+                "is_menu_match": True,
+                "matched_menu_item_name": "Soup",
+                "matched_menu_item_price": "12.00",
+                "match_confidence": 1.2,
+            }
+        )

@@ -13,11 +13,16 @@ from app.image_processing.restaurant_web_search.models import (
     RestaurantInfo,
     RestaurantWebEnrichment,
 )
-from app.image_processing.restaurant_web_search.prompts import build_restaurant_web_search_prompt
+from app.image_processing.restaurant_web_search.prompts import (
+    build_menu_item_verification_prompt,
+    build_restaurant_web_search_prompt,
+)
+from app.image_processing.restaurant_web_search.response_formats import MenuItemVerificationResponse
 from app.logging import get_logger
 
 LOGGER = get_logger(__name__)
 DEFAULT_WEB_SEARCH_MODEL = "gemini-2.5-flash"
+DEFAULT_MENU_VERIFICATION_MODEL = "gemini-2.5-flash"
 
 
 def is_web_search_enabled() -> bool:
@@ -65,7 +70,6 @@ async def enrich_restaurant_from_web_async(
         raw_response = await asyncio.wait_for(
             _run_web_search_agent(prompt=prompt, model_name=model_name), timeout_seconds
         )
-        LOGGER.debug(f"ADK web-search agent returned payload type: {type(raw_response).__name__}")
         parsed = utils.coerce_web_search_response(raw_response)
         enrichment = utils.to_model_enrichment(parsed)
     except TimeoutError:
@@ -94,11 +98,94 @@ async def enrich_restaurant_from_web_async(
         f"{{'evidence_urls': {enrichment.match.evidence_urls if enrichment.match else []}, "
         f"'menu_source_urls': {enrichment.menu_source_urls}}}"
     )
-    LOGGER.info(f"Restaurant web search fetched menu items: {utils.menu_items_for_log(enrichment)}")
     return enrichment
 
 
+async def verify_menu_items_from_sources_async(
+    row_item_names: list[str],
+    menu_source_urls: list[str],
+    restaurant_name: str | None,
+) -> MenuItemVerificationResponse:
+    if not row_item_names:
+        LOGGER.debug("Skipping menu verification: no row item names provided")
+        return MenuItemVerificationResponse()
+
+    if not menu_source_urls:
+        LOGGER.debug("Skipping menu verification: no menu source urls provided")
+        return MenuItemVerificationResponse()
+
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise RestaurantWebSearchConfigError(
+            "GEMINI_API_KEY is required for menu item verification"
+        )
+
+    prompt = build_menu_item_verification_prompt(
+        row_item_names=row_item_names,
+        menu_source_urls=menu_source_urls,
+        restaurant_name=restaurant_name,
+    )
+    model_name = os.getenv("RESTAURANT_MENU_VERIFICATION_MODEL", DEFAULT_MENU_VERIFICATION_MODEL)
+    timeout_seconds = float(os.getenv("RESTAURANT_MENU_VERIFICATION_TIMEOUT_SECONDS", "10"))
+    LOGGER.debug(
+        "Prepared menu verification request with "
+        f"model={model_name}, timeout_seconds={timeout_seconds}, prompt_chars={len(prompt)}"
+    )
+
+    started = time.perf_counter()
+    try:
+        LOGGER.debug("Running ADK menu-verification agent")
+        raw_response = await asyncio.wait_for(
+            _run_menu_item_verification_agent(prompt=prompt, model_name=model_name),
+            timeout_seconds,
+        )
+        parsed = utils.coerce_menu_item_verification_response(raw_response)
+    except TimeoutError as exc:
+        raise RestaurantWebSearchUpstreamError("menu verification timeout") from exc
+    except (RestaurantWebSearchParseError, RestaurantWebSearchUpstreamError):
+        raise
+    except Exception as exc:  # noqa: BLE001
+        raise RestaurantWebSearchUpstreamError(
+            f"menu verification failed unexpectedly: {exc}"
+        ) from exc
+    finally:
+        elapsed = time.perf_counter() - started
+        LOGGER.debug(f"Menu verification elapsed time: {elapsed:.3f}s")
+
+    LOGGER.info(f"Menu verification match count: {len(parsed.matches)}")
+    return parsed
+
+
 async def _run_web_search_agent(prompt: str, model_name: str) -> dict[str, Any] | str:
+    return await _run_search_agent(
+        prompt=prompt,
+        model_name=model_name,
+        agent_name="restaurant_web_search_agent",
+        instruction=(
+            "You are a restaurant finder. Use Google Search to identify the exact restaurant and "
+            "return JSON output only."
+        ),
+    )
+
+
+async def _run_menu_item_verification_agent(prompt: str, model_name: str) -> dict[str, Any] | str:
+    return await _run_search_agent(
+        prompt=prompt,
+        model_name=model_name,
+        agent_name="menu_item_verification_agent",
+        instruction=(
+            "You verify if requested dishes are present in the provided menu sources. "
+            "Use Google Search only when needed and return JSON output only."
+        ),
+    )
+
+
+async def _run_search_agent(
+    prompt: str,
+    model_name: str,
+    agent_name: str,
+    instruction: str,
+) -> dict[str, Any] | str:
     LOGGER.debug("Initializing ADK agent components")
     try:
         from google.adk.agents import Agent
@@ -114,12 +201,9 @@ async def _run_web_search_agent(prompt: str, model_name: str) -> dict[str, Any] 
         ) from exc
 
     agent = Agent(
-        name="restaurant_web_search_agent",
+        name=agent_name,
         model=model_name,
-        instruction=(
-            "You are a restaurant finder. Use Google Search to identify the exact restaurant and "
-            "return JSON output only."
-        ),
+        instruction=instruction,
         tools=[google_search],
     )
     LOGGER.debug("ADK agent initialized with google_search tool and output schema")

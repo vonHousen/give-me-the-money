@@ -1,4 +1,6 @@
 from app.image_processing.model import (
+    EnrichedProcessedReceipt,
+    EnrichedReceiptRow,
     EnrichedRestaurantInfo,
     ProcessedReceipt,
     ReceiptRow,
@@ -11,7 +13,9 @@ __all__ = [
     "parse_receipt",
     "verify_restaurant_lookup_info",
     "ProcessedReceipt",
+    "EnrichedProcessedReceipt",
     "ReceiptRow",
+    "EnrichedReceiptRow",
     "RestaurantInfo",
     "EnrichedRestaurantInfo",
 ]

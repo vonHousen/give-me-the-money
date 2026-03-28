@@ -13,13 +13,26 @@ async def _fake_agent_success(*_args, **_kwargs):
             "confidence": 0.8,
             "evidence_urls": ["https://example.com"],
         },
-        "menu_items": [{"item_name": "Soup", "item_price": "12.00", "currency_code": "PLN"}],
         "menu_source_urls": ["https://example.com/menu"],
     }
 
 
 async def _fake_agent_failure(*_args, **_kwargs):
     raise RuntimeError("upstream failed")
+
+
+async def _fake_menu_verify_success(*_args, **_kwargs):
+    return {
+        "matches": [
+            {
+                "row_item_name": "Soup",
+                "is_menu_match": True,
+                "matched_menu_item_name": "Tomato Soup",
+                "matched_menu_item_price": "12.00",
+                "match_confidence": 0.91,
+            }
+        ]
+    }
 
 
 def test_is_web_search_enabled_when_truthy_env_expect_true(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -74,3 +87,33 @@ def test_enrich_restaurant_from_web_when_agent_fails_expect_failed(
     result = service.enrich_restaurant_from_web(info)
 
     assert result.status == "failed"
+
+
+def test_verify_menu_items_from_sources_async_when_success_expect_matches(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr(service, "_run_menu_item_verification_agent", _fake_menu_verify_success)
+
+    result = asyncio.run(
+        service.verify_menu_items_from_sources_async(
+            row_item_names=["Soup"],
+            menu_source_urls=["https://example.com/menu"],
+            restaurant_name="Bistro XYZ",
+        )
+    )
+
+    assert len(result.matches) == 1
+    assert result.matches[0].is_menu_match is True
+
+
+def test_verify_menu_items_from_sources_async_when_missing_sources_expect_empty() -> None:
+    result = asyncio.run(
+        service.verify_menu_items_from_sources_async(
+            row_item_names=["Soup"],
+            menu_source_urls=[],
+            restaurant_name="Bistro XYZ",
+        )
+    )
+
+    assert result.matches == []

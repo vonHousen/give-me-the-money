@@ -54,10 +54,15 @@ def main(
 
     result = parse_receipt(img_b64=img_b64, mime_type=mime_type)
 
-    console.rule("[bold cyan]Receipt Parse Result[/bold cyan]")
+    console.rule("[bold cyan]ProcessedReceipt[/bold cyan]")
     console.print(f"[bold]File:[/bold] {image_path}")
     console.print(f"[bold]Currency:[/bold] {result.currency_code}")
     console.print(f"[bold]Calculated total:[/bold] {_format_money(result.calculated_total)}")
+    console.print(f"[bold]Restaurant NIP:[/bold] {result.restaurant_info.nip or '-'}")
+    console.print(f"[bold]Restaurant name:[/bold] {result.restaurant_info.restaurant_name or '-'}")
+    console.print(
+        f"[bold]Restaurant address:[/bold] {result.restaurant_info.restaurant_address or '-'}"
+    )
 
     if not result.rows:
         console.print("[yellow]No rows found.[/yellow]")
@@ -81,23 +86,54 @@ def main(
         console.print(table)
 
     if verify_restaurant:
-        verified = asyncio.run(verify_restaurant_lookup_info(result.restaurant_info))
-        console.rule("[bold green]Restaurant Verification Result[/bold green]")
-        console.print(f"[bold]NIP:[/bold] {verified.nip or '-'}")
-        console.print(f"[bold]Restaurant name:[/bold] {verified.restaurant_name or '-'}")
-        console.print(f"[bold]Restaurant address:[/bold] {verified.restaurant_address or '-'}")
-        console.print(f"[bold]Website:[/bold] {verified.website_url or '-'}")
-        console.print(f"[bold]Evidence URLs:[/bold] {len(verified.evidence_urls)}")
-        for url in verified.evidence_urls:
+        enriched = asyncio.run(verify_restaurant_lookup_info(result))
+        console.rule("[bold green]EnrichedProcessedReceipt[/bold green]")
+        console.print(f"[bold]Currency:[/bold] {enriched.currency_code}")
+        console.print(f"[bold]Calculated total:[/bold] {_format_money(enriched.calculated_total)}")
+        console.print(f"[bold]NIP:[/bold] {enriched.restaurant_info.nip or '-'}")
+        console.print(
+            f"[bold]Restaurant name:[/bold] {enriched.restaurant_info.restaurant_name or '-'}"
+        )
+        console.print(
+            f"[bold]Restaurant address:[/bold] {enriched.restaurant_info.restaurant_address or '-'}"
+        )
+        console.print(f"[bold]Website:[/bold] {enriched.restaurant_info.website_url or '-'}")
+        console.print(f"[bold]Evidence URLs:[/bold] {len(enriched.restaurant_info.evidence_urls)}")
+        for url in enriched.restaurant_info.evidence_urls:
             console.print(f"  - {url}")
-        console.print(f"[bold]Menu items:[/bold] {len(verified.menu_items)}")
-        for item in verified.menu_items:
-            price = _format_money(item.item_price) if item.item_price is not None else "-"
-            currency = item.currency_code or "-"
-            console.print(f"  - {item.item_name}: {price} {currency}")
-        console.print(f"[bold]Menu source URLs:[/bold] {len(verified.menu_source_urls)}")
-        for url in verified.menu_source_urls:
+        console.print(
+            f"[bold]Menu source URLs:[/bold] {len(enriched.restaurant_info.menu_source_urls)}"
+        )
+        for url in enriched.restaurant_info.menu_source_urls:
             console.print(f"  - {url}")
+
+        enriched_table = Table(
+            title=f"Enriched Rows ({len(enriched.rows)} rows)", header_style="bold green"
+        )
+        enriched_table.add_column("#", justify="right")
+        enriched_table.add_column("item_name")
+        enriched_table.add_column("item_count", justify="right")
+        enriched_table.add_column("total_cost", justify="right")
+        enriched_table.add_column("is_menu_match", justify="center")
+        enriched_table.add_column("matched_menu_item")
+        enriched_table.add_column("matched_price", justify="right")
+        enriched_table.add_column("match_confidence", justify="right")
+
+        for idx, row in enumerate(enriched.rows, start=1):
+            enriched_table.add_row(
+                str(idx),
+                row.item_name,
+                str(row.item_count),
+                _format_money(row.total_cost),
+                "yes" if row.is_menu_match else "no",
+                row.matched_menu_item_name or "-",
+                _format_money(row.matched_menu_item_price)
+                if row.matched_menu_item_price is not None
+                else "-",
+                f"{row.match_confidence:.2f}" if row.match_confidence is not None else "-",
+            )
+
+        console.print(enriched_table)
 
 
 if __name__ == "__main__":

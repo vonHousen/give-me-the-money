@@ -1,11 +1,14 @@
 from app.image_processing.restaurant_web_search import utils
-from app.image_processing.restaurant_web_search.response_formats import RestaurantWebSearchResponse
+from app.image_processing.restaurant_web_search.response_formats import (
+    MenuItemVerificationResponse,
+    RestaurantWebSearchResponse,
+)
 
 
 def test_coerce_web_search_response_when_json_string_expect_schema_validated() -> None:
     raw = (
         '{"match":{"restaurant_name":"Bistro XYZ","confidence":0.8,"evidence_urls":[]},'
-        '"menu_items":[],"menu_source_urls":[]}'
+        '"menu_source_urls":[]}'
     )
 
     parsed = utils.coerce_web_search_response(raw)
@@ -22,7 +25,6 @@ def test_to_model_enrichment_when_valid_response_expect_success_status() -> None
                 "confidence": 0.8,
                 "evidence_urls": ["https://example.com"],
             },
-            "menu_items": [{"item_name": "Soup", "item_price": "12.00", "currency_code": "PLN"}],
             "menu_source_urls": ["https://example.com/menu"],
         }
     )
@@ -32,4 +34,37 @@ def test_to_model_enrichment_when_valid_response_expect_success_status() -> None
     assert enrichment.status == "success"
     assert enrichment.match is not None
     assert enrichment.match.confidence == 0.8
-    assert len(enrichment.menu_items) == 1
+    assert enrichment.menu_source_urls == ["https://example.com/menu"]
+
+
+def test_coerce_menu_item_verification_response_when_json_string_expect_schema_validated() -> None:
+    raw = (
+        '{"matches":[{"row_item_name":"gimbab","is_menu_match":true,'
+        '"matched_menu_item_name":"Gimbap","matched_menu_item_price":"28.00",'
+        '"match_confidence":0.88}]}'
+    )
+
+    parsed = utils.coerce_menu_item_verification_response(raw)
+
+    assert len(parsed.matches) == 1
+    assert parsed.matches[0].matched_menu_item_name == "Gimbap"
+
+
+def test_menu_match_map_by_row_name_when_valid_response_expect_mapping() -> None:
+    response = MenuItemVerificationResponse.model_validate(
+        {
+            "matches": [
+                {
+                    "row_item_name": "gimbab",
+                    "is_menu_match": True,
+                    "matched_menu_item_name": "Gimbap",
+                    "matched_menu_item_price": "28.00",
+                    "match_confidence": 0.88,
+                }
+            ]
+        }
+    )
+
+    mapping = utils.menu_match_map_by_row_name(response)
+
+    assert mapping["gimbab"].is_menu_match is True

@@ -13,12 +13,6 @@ class RestaurantMatch(BaseModel):
     evidence_urls: list[str] = Field(default_factory=list)
 
 
-class MenuItem(BaseModel):
-    item_name: str = Field(min_length=1)
-    item_price: Decimal | None = Field(default=None, ge=0)
-    currency_code: str | None = Field(default=None, min_length=3, max_length=3)
-
-
 class RestaurantWebSearchResponse(BaseModel):
     STRUCTURED_OUTPUT_HINT: ClassVar[str] = dedent("""
         Return JSON only with this shape:
@@ -30,18 +24,39 @@ class RestaurantWebSearchResponse(BaseModel):
             "confidence": 0.0,
             "evidence_urls": ["https://..."]
           },
-          "menu_items": [
-            {
-              "item_name": "string",
-              "item_price": "12.50 | null",
-              "currency_code": "PLN | null"
-            }
-          ],
           "menu_source_urls": ["https://..."]
         }
         Use null when a scalar value cannot be reliably established.
     """).strip()
 
     match: RestaurantMatch | None = None
-    menu_items: list[MenuItem] = Field(default_factory=list)
     menu_source_urls: list[str] = Field(default_factory=list)
+
+
+class ReceiptRowMenuMatch(BaseModel):
+    row_item_name: str = Field(min_length=1)
+    is_menu_match: bool
+    matched_menu_item_name: str | None = None
+    matched_menu_item_price: Decimal | None = Field(default=None, ge=0)
+    match_confidence: float | None = Field(default=None, ge=0, le=1)
+
+
+class MenuItemVerificationResponse(BaseModel):
+    STRUCTURED_OUTPUT_HINT: ClassVar[str] = dedent("""
+        Return JSON only with this shape:
+        {
+          "matches": [
+            {
+              "row_item_name": "string",
+              "is_menu_match": true,
+              "matched_menu_item_name": "string | null",
+              "matched_menu_item_price": "12.50 | null",
+              "match_confidence": 0.0
+            }
+          ]
+        }
+        Include one entry per provided receipt row item name.
+        Use null when a scalar value cannot be reliably established.
+    """).strip()
+
+    matches: list[ReceiptRowMenuMatch] = Field(default_factory=list)
