@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { X, Check } from 'lucide-react'
 import { PageLayout } from '@/components/PageLayout'
-import { SwipeCard } from '@/components/SwipeCard'
+import { SwipeCard, type SwipeCardHandle } from '@/components/SwipeCard'
 import { QuantityPickOverlay } from '@/components/QuantityPickOverlay'
 import { CurrencyDisplay } from '@/components/CurrencyDisplay'
 import {
@@ -17,6 +17,48 @@ import {
 } from '@/lib/settlementSession'
 import { roundMoney } from '@/lib/utils'
 
+function ItemCard({ item }: { item: SettlementItemWire }) {
+  const qty = item.quantity
+  const unit = roundMoney(item.unitPrice)
+
+  return (
+    <div className="aspect-[3/4] flex flex-col">
+      <div className="flex-grow bg-ds-surface-container-high relative overflow-hidden">
+        <div className="absolute inset-0 flex items-center justify-center text-ds-on-surface-variant opacity-20 font-headline text-8xl font-extrabold select-none">
+          🍽
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-transparent" />
+
+        <div className="absolute top-5 left-5 flex flex-wrap gap-2">
+          <span className="px-3 py-1.5 bg-ds-primary/90 backdrop-blur-md rounded-full shadow-sm text-[9px] font-bold uppercase tracking-[0.15em] text-ds-on-primary">
+            ×{qty} on bill
+          </span>
+        </div>
+
+        <div className="absolute bottom-4 inset-x-0 flex justify-center pointer-events-none opacity-25">
+          <span className="font-label text-[9px] font-bold tracking-[0.3em] uppercase text-white">
+            ← swipe to decide →
+          </span>
+        </div>
+      </div>
+
+      <div className="p-6 space-y-4 bg-ds-surface-container-lowest dark:bg-ds-surface-container">
+        <div>
+          <h2 className="font-headline font-extrabold text-2xl text-ds-on-surface tracking-tight leading-tight">
+            {item.name}
+          </h2>
+          <p className="font-body text-xs text-ds-on-surface-variant/90 mt-1.5 tabular-nums">
+            Unit ${unit.toFixed(2)}
+            {qty > 1 ? ' · line total below' : null}
+          </p>
+        </div>
+        <CurrencyDisplay amount={item.price} className="justify-start scale-75 origin-left" />
+      </div>
+    </div>
+  )
+}
+
 export default function Swipe() {
   const { settlementId } = useParams<{ settlementId: string }>()
   const navigate = useNavigate()
@@ -30,6 +72,7 @@ export default function Swipe() {
   /** Bumps when the last-item claim fails so the deck remounts with a centered card. */
   const [swipeEpoch, setSwipeEpoch] = useState(0)
   const [finishing, setFinishing] = useState(false)
+  const swipeRef = useRef<SwipeCardHandle>(null)
 
   const participantId = settlementId ? getParticipantIdFromSession(settlementId) : null
 
@@ -167,8 +210,9 @@ export default function Swipe() {
   }
 
   const lineQty = current.quantity
-  const unitLabel = roundMoney(current.unitPrice)
-  const nextItem = index + 1 < items.length ? items[index + 1] : null
+  const behindSlots = items
+    .slice(index + 1, index + 3)
+    .map((item) => <ItemCard key={item.id} item={item} />)
 
   return (
     <div className="min-h-screen">
@@ -196,70 +240,13 @@ export default function Swipe() {
           </div>
         ) : pickStep === 1 ? (
           <SwipeCard
+            ref={swipeRef}
             topCardKey={`${current.id}-${swipeEpoch}`}
             onSwipe={handleCardSwipe}
             className="w-full"
-            behindChildren={
-              nextItem ? (
-                <div className="aspect-[3/4] flex flex-col">
-                  <div className="flex-grow bg-ds-surface-container-high relative overflow-hidden">
-                    <div className="absolute inset-0 flex items-center justify-center text-ds-on-surface-variant opacity-15 font-headline text-6xl font-extrabold select-none">
-                      🍽
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
-                    <div className="absolute bottom-3 left-4 right-4">
-                      <p className="font-headline font-bold text-sm text-white/90 line-clamp-2 drop-shadow-md">
-                        {nextItem.name}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="p-3 bg-ds-surface-container-lowest dark:bg-ds-surface-container">
-                    <p className="font-label text-[9px] font-bold uppercase tracking-widest text-ds-on-surface-variant/70">
-                      Up next
-                    </p>
-                  </div>
-                </div>
-              ) : undefined
-            }
+            behindSlots={behindSlots.length > 0 ? behindSlots : undefined}
           >
-            <div className="aspect-[3/4] flex flex-col">
-              <div className="flex-grow bg-ds-surface-container-high relative overflow-hidden">
-                <div className="absolute inset-0 flex items-center justify-center text-ds-on-surface-variant opacity-20 font-headline text-8xl font-extrabold select-none">
-                  🍽
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-transparent" />
-
-                <div className="absolute top-5 left-5 flex flex-wrap gap-2">
-                  <span className="px-3 py-1.5 bg-ds-primary/90 backdrop-blur-md rounded-full shadow-sm text-[9px] font-bold uppercase tracking-[0.15em] text-ds-on-primary">
-                    ×{lineQty} on bill
-                  </span>
-                </div>
-
-                <div className="absolute bottom-4 inset-x-0 flex justify-center pointer-events-none opacity-25">
-                  <span className="font-label text-[9px] font-bold tracking-[0.3em] uppercase text-white">
-                    ← swipe to decide →
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-6 space-y-4 bg-ds-surface-container-lowest dark:bg-ds-surface-container">
-                <div>
-                  <h2 className="font-headline font-extrabold text-2xl text-ds-on-surface tracking-tight leading-tight">
-                    {current.name}
-                  </h2>
-                  <p className="font-body text-sm text-ds-on-surface-variant mt-1.5 leading-relaxed">
-                    Swipe right if this is yours, left if not
-                    {lineQty > 1 ? ' — then choose how many.' : '.'}
-                  </p>
-                  <p className="font-body text-xs text-ds-on-surface-variant/90 mt-2 tabular-nums">
-                    Unit ${unitLabel.toFixed(2)}
-                    {lineQty > 1 ? ` · line total below` : null}
-                  </p>
-                </div>
-                <CurrencyDisplay amount={current.price} className="justify-start scale-75 origin-left" />
-              </div>
-            </div>
+            <ItemCard item={current} />
           </SwipeCard>
         ) : (
           <QuantityPickOverlay
@@ -278,37 +265,46 @@ export default function Swipe() {
         ) : null}
 
         {!finishing && pickStep === 1 ? (
-          <div className="flex gap-8 items-center justify-center w-full pt-2">
-            <div className="flex flex-col items-center gap-2">
-              <button
-                type="button"
-                aria-label="Decline"
-                disabled={claimSubmitting}
-                onClick={() => void submitClaim(0)}
-                className="w-16 h-16 rounded-full bg-ds-surface-container-lowest shadow-md flex items-center justify-center hover:bg-ds-tertiary/10 transition-all active:scale-90 duration-150 disabled:opacity-50"
-              >
-                <X className="w-7 h-7 text-ds-tertiary" />
-              </button>
-              <span className="font-label text-[9px] font-bold uppercase tracking-[0.2em] text-ds-on-surface-variant opacity-40">
-                Pass
-              </span>
-            </div>
+          <>
+            <div className="flex gap-8 items-center justify-center w-full pt-2">
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  aria-label="Decline"
+                  disabled={claimSubmitting}
+                  onClick={() => swipeRef.current?.triggerSwipe('left')}
+                  className="w-16 h-16 rounded-full bg-ds-surface-container-lowest shadow-md flex items-center justify-center hover:bg-ds-tertiary/10 transition-all active:scale-90 duration-150 disabled:opacity-50"
+                >
+                  <X className="w-7 h-7 text-ds-tertiary" />
+                </button>
+                <span className="font-label text-[9px] font-bold uppercase tracking-[0.2em] text-ds-on-surface-variant opacity-40">
+                  Pass
+                </span>
+              </div>
 
-            <div className="flex flex-col items-center gap-2">
-              <button
-                type="button"
-                aria-label="Accept"
-                disabled={claimSubmitting}
-                onClick={() => handleCardSwipe('right')}
-                className="w-16 h-16 rounded-full bg-ds-primary shadow-lg shadow-ds-primary/20 flex items-center justify-center hover:opacity-90 transition-all active:scale-90 duration-150 disabled:opacity-50"
-              >
-                <Check className="w-7 h-7 text-ds-on-primary" />
-              </button>
-              <span className="font-label text-[9px] font-bold uppercase tracking-[0.2em] text-ds-primary">
-                Mine
-              </span>
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  aria-label="Accept"
+                  disabled={claimSubmitting}
+                  onClick={() =>
+                    lineQty > 1
+                      ? handleCardSwipe('right')
+                      : swipeRef.current?.triggerSwipe('right')
+                  }
+                  className="w-16 h-16 rounded-full bg-ds-primary shadow-lg shadow-ds-primary/20 flex items-center justify-center hover:opacity-90 transition-all active:scale-90 duration-150 disabled:opacity-50"
+                >
+                  <Check className="w-7 h-7 text-ds-on-primary" />
+                </button>
+                <span className="font-label text-[9px] font-bold uppercase tracking-[0.2em] text-ds-primary">
+                  Mine
+                </span>
+              </div>
             </div>
-          </div>
+            <p className="font-body text-xs text-ds-on-surface-variant/50 text-center w-full">
+              Swipe right if this is yours, left to pass
+            </p>
+          </>
         ) : null}
       </PageLayout>
     </div>

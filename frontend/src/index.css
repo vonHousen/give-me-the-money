@@ -203,18 +203,4 @@
 }
 
 @layer utilities {
-  @keyframes swipe-card-promote {
-    from {
-      opacity: 0.88;
-      transform: translateY(0.85rem) scale(0.96);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-
-  .animate-swipe-card-promote {
-    animation: swipe-card-promote 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  }
 }
