@@ -1,11 +1,14 @@
-from uuid import UUID
+import asyncio
+import base64
+from uuid import UUID, uuid4
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 
 from app.database.settlement_repository import SettlementRepository
 from app.image_processing import parse_receipt
-from app.models import ItemBase, Settlement
+from app.image_processing.enrich_receipt import DATA_DIR, enrich
+from app.models import Item, ItemBase, Settlement
 from app.services import settle
 
 router = APIRouter()
@@ -19,7 +22,7 @@ class AnalyzeRequest(BaseModel):
 class AnalyzeResponse(BaseModel):
     name: str
     currency_code: str
-    items: list[ItemBase]
+    items: list[Item]
 
 
 class SettlementRequest(BaseModel):
@@ -82,23 +85,35 @@ class FinishResponse(BaseModel):
     summary: SummaryPayload
 
 
+class ImageResponse(BaseModel):
+    image_b64: str
+
+
 _settlement_repository = SettlementRepository()
 
 
 @router.post("/analyze", response_model=AnalyzeResponse)
-def analyze(body: AnalyzeRequest) -> AnalyzeResponse:
+async def analyze(body: AnalyzeRequest, background_tasks: BackgroundTasks) -> AnalyzeResponse:
     processed_receipt = parse_receipt(img_b64=body.image_base64, mime_type=body.mime_type)
 
     items = [
-        ItemBase(name=row.item_name, price=float(row.total_cost), count=row.item_count)
+        Item(id=uuid4(), name=row.item_name, price=float(row.total_cost), count=row.item_count)
         for row in processed_receipt.rows
     ]
-
+    background_tasks.add_task(enrich, processed_receipt, [item.id for item in items])
     return AnalyzeResponse(
         name="Pizzeria",
         currency_code=processed_receipt.currency_code,
         items=items,
     )
+
+
+@router.get("/image/{image_id}", response_model=ImageResponse)
+def get_image(image_id: UUID) -> ImageResponse:
+    path = DATA_DIR / f"{image_id}.jpg"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Image not found")
+    return ImageResponse(image_b64=base64.b64encode(path.read_bytes()).decode())
 
 
 @router.post("/settlements", response_model=Settlement, status_code=201)
