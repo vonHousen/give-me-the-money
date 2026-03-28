@@ -6,6 +6,7 @@ import { SwipeCard, type SwipeCardHandle } from '@/components/SwipeCard'
 import { QuantityPickOverlay } from '@/components/QuantityPickOverlay'
 import { CurrencyDisplay } from '@/components/CurrencyDisplay'
 import {
+  getSettlementApiBaseUrl,
   getSettlementForSwipe,
   markSwipeComplete,
   recordItemClaim,
@@ -18,6 +19,22 @@ import {
 } from '@/lib/settlementSession'
 import { formatMoney, roundMoney } from '@/lib/utils'
 
+function ItemImage({ itemId, alt }: { itemId: string; alt: string }) {
+  const [src, setSrc] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch(`${getSettlementApiBaseUrl()}/image/${itemId}`)
+      .then((r) => r.json())
+      .then((data: { image_b64?: string }) => {
+        if (data.image_b64) setSrc(`data:image/jpeg;base64,${data.image_b64}`)
+      })
+      .catch(() => {})
+  }, [itemId])
+
+  if (!src) return null
+  return <img src={src} alt={alt} className="absolute inset-0 w-full h-full object-cover" />
+}
+
 function ItemCard({ item, currencyCode }: { item: SettlementItemWire; currencyCode: string }) {
   const qty = item.quantity
   const unit = roundMoney(item.unitPrice)
@@ -28,6 +45,7 @@ function ItemCard({ item, currencyCode }: { item: SettlementItemWire; currencyCo
         <div className="absolute inset-0 flex items-center justify-center text-ds-on-surface-variant opacity-20 font-headline text-8xl font-extrabold select-none">
           🍽
         </div>
+        <ItemImage itemId={item.id} alt={item.name} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-transparent" />
 
