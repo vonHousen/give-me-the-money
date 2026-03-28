@@ -1,4 +1,3 @@
-import asyncio
 import base64
 from uuid import UUID, uuid4
 
@@ -8,7 +7,6 @@ from pydantic import BaseModel
 from app.database.settlement_repository import SettlementRepository
 from app.image_processing import parse_receipt
 from app.image_processing.enrich_receipt import DATA_DIR, enrich
-from app.models import Settlement
 from app.models import Item, ItemBase, Settlement
 from app.services import settle
 

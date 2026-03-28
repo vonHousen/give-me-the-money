@@ -54,7 +54,13 @@ class SettlementRepository:
         settlement = {
             "id": str(uuid4()),
             "name": name,
-            "items": [{"id": str(item.id) if item.id else str(uuid4()), **{k: v for k, v in item.model_dump().items() if k != "id"}} for item in items],
+            "items": [
+                {
+                    "id": str(item.id) if item.id else str(uuid4()),
+                    **{k: v for k, v in item.model_dump().items() if k != "id"},
+                }
+                for item in items
+            ],
             "users": [
                 {
                     "id": owner_id,
