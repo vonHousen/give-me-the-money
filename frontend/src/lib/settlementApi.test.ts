@@ -234,7 +234,7 @@ describe('mock settlement lifecycle', () => {
     expect(guestBeer?.price).toBe(10)
   })
 
-  it('finish throws when total claimed quantity exceeds line quantity', async () => {
+  it('finish splits price proportionally when claims overlap', async () => {
     vi.stubEnv('VITE_SETTLEMENT_API_URL', '')
     const created = await createSettlement({
       name: 'Bar',
@@ -247,6 +247,10 @@ describe('mock settlement lifecycle', () => {
     await recordItemClaim(created.id, participantId, beerItem.id, 4)
     await markSwipeComplete(created.id, ownerId)
     await markSwipeComplete(created.id, participantId)
-    await expect(finishSettlement(created.id)).rejects.toThrow(/exceed/)
+    const { summary } = await finishSettlement(created.id)
+    const owner = summary.people.find((p) => p.id === ownerId)
+    const guest = summary.people.find((p) => p.id === participantId)
+    expect(owner?.items[0].price).toBe(25)
+    expect(guest?.items[0].price).toBe(25)
   })
 })

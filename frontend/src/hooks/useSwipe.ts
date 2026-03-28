@@ -63,12 +63,29 @@ export function useSwipe({ threshold = 100, onSwipe }: UseSwipeOptions) {
     }
   }, [threshold, onSwipe])
 
-  const transformTransition = throwing || snapBack ? 'transform 0.3s ease-out' : 'none'
+  const triggerSwipe = useCallback(
+    (direction: 'left' | 'right') => {
+      if (dragging.current || throwing) return
+      const target =
+        direction === 'right' ? window.innerWidth * 1.5 : -window.innerWidth * 1.5
+      setThrowing(true)
+      setDeltaX(target)
+      throwTimerRef.current = setTimeout(() => {
+        onSwipe?.(direction)
+        setThrowing(false)
+      }, 300)
+    },
+    [throwing, onSwipe],
+  )
+
+  const transformTransition =
+    throwing || snapBack ? 'transform 0.3s ease-out, opacity 0.25s ease-out' : 'none'
 
   return {
     deltaX,
     throwing,
     transformTransition,
+    triggerSwipe,
     onPointerDown,
     onPointerMove,
     onPointerUp,

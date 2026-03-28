@@ -1,16 +1,18 @@
-import { cn } from '@/lib/utils'
+import { cn, getCurrencySymbol } from '@/lib/utils'
 
 interface CurrencyDisplayProps {
   amount: number
-  currency?: string
+  /** ISO 4217 code (e.g. "USD", "EUR", "PLN"). Falls back to USD. */
+  currencyCode?: string
   className?: string
 }
 
 export function CurrencyDisplay({
   amount,
-  currency = '$',
+  currencyCode = 'USD',
   className,
 }: CurrencyDisplayProps) {
+  const symbol = getCurrencySymbol(currencyCode)
   const whole = Math.floor(amount)
   const cents = (Math.round((amount - whole) * 100) % 100)
     .toString()
@@ -23,7 +25,7 @@ export function CurrencyDisplay({
         className,
       )}
     >
-      <span className="text-4xl font-bold mt-2">{currency}</span>
+      <span className="text-4xl font-bold mt-2">{symbol}</span>
       <span className="text-7xl font-extrabold tracking-tighter leading-none">
         {whole}
       </span>

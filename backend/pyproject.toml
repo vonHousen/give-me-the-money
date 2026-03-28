@@ -5,7 +5,9 @@ description = "Add your description here"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.135.2",
+    "google-adk>=1.25.0",
     "google-genai>=1.68.0",
+    "python-dotenv>=1.1.1",
     "rich>=14.2.0",
     "typer>=0.24.1",
     "uvicorn[standard]>=0.42.0",

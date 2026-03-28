@@ -1,3 +1,4 @@
+import ast
 import base64
 import importlib
 from decimal import Decimal
@@ -5,15 +6,16 @@ from typing import Any
 
 import pytest
 
-from app.image_processing.exceptions import (
+from app.image_processing.ocr.exceptions import (
     ImageProcessingConfigError,
     ImageProcessingParseError,
     ImageProcessingUpstreamError,
 )
-from app.image_processing.response_formats import ProcessedReceipt
+from app.image_processing.ocr.response_formats import ProcessedReceipt
 
 parse_receipt_module = importlib.import_module("app.image_processing.parse_receipt")
 parse_receipt = parse_receipt_module.parse_receipt
+utils_module = importlib.import_module("app.image_processing.ocr.utils")
 
 
 class _FakePart:
@@ -96,6 +98,12 @@ def test_parse_receipt_when_raw_base64_input_expect_processed_receipt(
     parsed = ProcessedReceipt.model_validate(
         {
             "rows": [{"item_name": "Tomato", "item_count": 2, "total_cost": "12.50"}],
+            "total_value": "12.50",
+            "restaurant_info": {
+                "nip": None,
+                "restaurant_address": None,
+                "restaurant_name": None,
+            },
         },
     )
     _install_fake_genai(monkeypatch, parsed=parsed, capture=capture)
@@ -108,6 +116,9 @@ def test_parse_receipt_when_raw_base64_input_expect_processed_receipt(
     assert len(result.rows) == 1
     assert result.rows[0].item_name == "Tomato"
     assert result.calculated_total == Decimal("12.50")
+    assert result.restaurant_info.restaurant_name is None
+    assert result.restaurant_info.restaurant_address is None
+    assert result.restaurant_info.nip is None
     assert capture["api_key"] == "test-key"
     assert capture["request"]["contents"][0]["mime_type"] == "image/jpeg"
 
@@ -123,6 +134,12 @@ def test_parse_receipt_when_data_url_input_expect_mime_type_extracted(
     parsed = ProcessedReceipt.model_validate(
         {
             "rows": [{"item_name": "Coffee", "item_count": 1, "total_cost": "9.99"}],
+            "total_value": "9.99",
+            "restaurant_info": {
+                "nip": None,
+                "restaurant_address": None,
+                "restaurant_name": None,
+            },
         },
     )
     _install_fake_genai(monkeypatch, parsed=parsed, capture=capture)
@@ -153,7 +170,17 @@ def test_parse_receipt_when_gemini_fails_expect_upstream_error(
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
     payload = base64.b64encode(b"fake image bytes").decode("utf-8")
     capture: dict[str, Any] = {}
-    parsed = ProcessedReceipt.model_validate({"rows": []})
+    parsed = ProcessedReceipt.model_validate(
+        {
+            "rows": [],
+            "total_value": "0.00",
+            "restaurant_info": {
+                "nip": None,
+                "restaurant_address": None,
+                "restaurant_name": None,
+            },
+        },
+    )
     _install_fake_genai(monkeypatch, parsed=parsed, capture=capture, should_fail=True)
 
     # Act / Assert
@@ -180,3 +207,112 @@ def test_parse_receipt_when_rows_are_ambiguous_expect_parse_error(
     # Act / Assert
     with pytest.raises(ImageProcessingParseError):
         parse_receipt(payload)
+
+
+def test_parse_receipt_when_nip_is_non_empty_expect_nip_logged(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Arrange
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    payload = base64.b64encode(b"fake image bytes").decode("utf-8")
+    capture: dict[str, Any] = {}
+    parsed = ProcessedReceipt.model_validate(
+        {
+            "rows": [{"item_name": "Bread", "item_count": 1, "total_cost": "5.00"}],
+            "total_value": "5.00",
+            "restaurant_info": {
+                "nip": "1234567890",
+                "restaurant_address": None,
+                "restaurant_name": None,
+            },
+        },
+    )
+    _install_fake_genai(monkeypatch, parsed=parsed, capture=capture)
+    log_calls: list[str] = []
+
+    class _FakeLogger:
+        @staticmethod
+        def debug(*_args: Any, **_kwargs: Any) -> None:
+            return None
+
+        @staticmethod
+        def info(*args: Any, **_kwargs: Any) -> None:
+            log_calls.append(args[0] if args else "")
+
+    monkeypatch.setattr(utils_module, "LOGGER", _FakeLogger)
+
+    # Act
+    _ = parse_receipt(payload)
+
+    # Assert
+    assert log_calls[0] == "Receipt restaurant attributes extracted: {'nip': '1234567890'}"
+
+
+def test_parse_receipt_when_restaurant_attributes_present_expect_logged(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Arrange
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    payload = base64.b64encode(b"fake image bytes").decode("utf-8")
+    capture: dict[str, Any] = {}
+    parsed = ProcessedReceipt.model_validate(
+        {
+            "rows": [{"item_name": "Soup", "item_count": 1, "total_cost": "12.00"}],
+            "total_value": "12.00",
+            "restaurant_info": {
+                "nip": None,
+                "restaurant_name": "Bistro XYZ",
+                "restaurant_address": "Main Street 10, Warsaw",
+            },
+        },
+    )
+    _install_fake_genai(monkeypatch, parsed=parsed, capture=capture)
+    log_calls: list[str] = []
+
+    class _FakeLogger:
+        @staticmethod
+        def debug(*_args: Any, **_kwargs: Any) -> None:
+            return None
+
+        @staticmethod
+        def info(*args: Any, **_kwargs: Any) -> None:
+            log_calls.append(args[0] if args else "")
+
+    monkeypatch.setattr(utils_module, "LOGGER", _FakeLogger)
+
+    # Act
+    _ = parse_receipt(payload)
+
+    # Assert
+    extracted: dict[str, str] = {
+        "restaurant_name": "Bistro XYZ",
+        "restaurant_address": "Main Street 10, Warsaw",
+    }
+    prefix = "Receipt restaurant attributes extracted: "
+    assert log_calls[0].startswith(prefix)
+    assert ast.literal_eval(log_calls[0][len(prefix) :]) == extracted
+
+
+def test_parse_receipt_when_restaurant_attributes_present_expect_restaurant_info_mapped(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    payload = base64.b64encode(b"fake image bytes").decode("utf-8")
+    capture: dict[str, Any] = {}
+    parsed = ProcessedReceipt.model_validate(
+        {
+            "rows": [{"item_name": "Soup", "item_count": 1, "total_cost": "12.00"}],
+            "total_value": "12.00",
+            "restaurant_info": {
+                "nip": None,
+                "restaurant_name": "Bistro XYZ",
+                "restaurant_address": "Main Street 10, Warsaw",
+            },
+        },
+    )
+    _install_fake_genai(monkeypatch, parsed=parsed, capture=capture)
+    result = parse_receipt(payload)
+
+    assert result.restaurant_info.restaurant_name == "Bistro XYZ"
+    assert result.restaurant_info.restaurant_address == "Main Street 10, Warsaw"
+    assert result.restaurant_info.nip is None

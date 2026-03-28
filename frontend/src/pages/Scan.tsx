@@ -1,32 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Camera, Upload, Lightbulb } from 'lucide-react'
-import { TopAppBar } from '@/components/TopAppBar'
 import { PageLayout } from '@/components/PageLayout'
 import { Button } from '@/components/ui/button'
+import { usePreferCameraCapture } from '@/hooks/usePreferCameraCapture'
 import { blobToBase64Payload } from '@/lib/receiptScanEncoding'
 import { analyzeReceipt } from '@/lib/receiptScanApi'
 import type { AnalyzeResponse } from '@/lib/receiptScanApi'
+import { AnalyzingOverlay } from '@/components/AnalyzingOverlay'
 
 export type ReviewLocationState = {
   analyzeResult?: AnalyzeResponse
-}
-
-/**
- * Touch-first devices: show "Take Photo" and set `capture` on the file input.
- * Fine pointer (desktop): hide that control — users pick files via "Upload" only.
- */
-function usePreferCameraCapture(): boolean {
-  const [prefer, setPrefer] = useState(false)
-  useEffect(() => {
-    if (typeof window.matchMedia !== 'function') return
-    const mq = window.matchMedia('(pointer: coarse)')
-    const sync = () => setPrefer(mq.matches)
-    sync()
-    mq.addEventListener('change', sync)
-    return () => mq.removeEventListener('change', sync)
-  }, [])
-  return prefer
 }
 
 export default function Scan() {
@@ -86,7 +70,8 @@ export default function Scan() {
   }
 
   return (
-    <div className="min-h-screen bg-ds-surface">
+    <div className="min-h-screen">
+      <AnalyzingOverlay visible={loading} />
       {preferCameraCapture ? (
         <input
           ref={cameraInputRef}
@@ -111,7 +96,6 @@ export default function Scan() {
         onChange={onFileChange}
       />
 
-      <TopAppBar />
       <PageLayout className="flex flex-col gap-6">
         <div className="space-y-1">
           <h2 className="font-headline font-extrabold text-3xl text-ds-on-surface tracking-tight leading-tight">

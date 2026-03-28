@@ -23,6 +23,10 @@ Set your key in `.env`:
 GEMINI_API_KEY=your_key_here
 # optional override
 GEMINI_MODEL=gemini-3.1-flash-lite-preview
+# optional web-search enrichment (best-effort, internal logs only)
+RESTAURANT_WEB_SEARCH_ENABLED=false
+RESTAURANT_WEB_SEARCH_MODEL=gemini-2.5-flash
+RESTAURANT_WEB_SEARCH_TIMEOUT_SECONDS=20
 ```
 
 From repo root, available helper commands are in `justfile`:
@@ -35,12 +39,11 @@ just
 
 Main package: `app/image_processing/`
 
-- `parse_receipt.py`: orchestration layer; calls Gemini with image + prompt and returns normalized `ProcessedReceipt`
-- `prompts.py`: receipt extraction prompt and output rules
-- `response_formats.py`: structured output schema sent to Gemini (`rows` shape)
-- `utils.py`: base64/data-url decode, schema coercion, decimal normalization, row normalization
-- `model.py`: final domain models used by the app (`ReceiptRow`, `ProcessedReceipt`)
-- `exceptions.py`: typed errors for config/parse/upstream failures
+- `parse_receipt.py`: orchestration layer; calls Gemini OCR flow and returns normalized `ProcessedReceipt`
+- `verify_restaurant_lookup.py`: async restaurant verification helper that enriches extracted `RestaurantInfo`
+- `ocr/`: receipt OCR-focused prompt/schema/utils/exceptions modules
+- `restaurant_web_search/`: ADK web-search agent prompt/schema/utils/models/service for restaurant matching + menu attempt
+- `model.py`: final domain models used by the app (`ReceiptRow`, `RestaurantInfo`, `ProcessedReceipt`, `EnrichedRestaurantInfo`)
 
 ### Parsing Flow
 
@@ -48,7 +51,10 @@ Main package: `app/image_processing/`
 2. Send image + structured prompt to Gemini.
 3. Validate/coerce Gemini JSON response.
 4. Normalize rows (`item_name`, `item_count`, `total_cost`).
-5. Return `ProcessedReceipt(rows, currency_code)`.
+5. Map extracted OCR restaurant attributes into `ProcessedReceipt.restaurant_info`.
+6. Return `ProcessedReceipt(rows, currency_code, restaurant_info)`.
+
+Restaurant verification is now an explicit async step via `verify_restaurant_lookup_info(...)`.
 
 ## Test `image_processing` With Script
 
@@ -64,6 +70,12 @@ Expected behavior:
 - Prints detected currency separately
 
 You can also run with your own receipt image path.
+
+To run receipt parsing with restaurant verification:
+
+```bash
+uv run --directory backend python scripts/parse_receipt.py data/receipt_rico.jpeg --verify-restaurant
+```
 
 ## Automated Tests
 

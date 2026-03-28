@@ -1,21 +1,39 @@
-import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { TopAppBar } from '@/components/TopAppBar'
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { PageLayout } from '@/components/PageLayout'
 import { SettlementQr } from '@/components/SettlementQr'
 import { Button } from '@/components/ui/button'
-import { joinSettlement } from '@/lib/settlementApi'
-import { setParticipantSession } from '@/lib/settlementSession'
+import { getSettlementForSwipe, joinSettlement } from '@/lib/settlementApi'
+import { getSettlementCurrency, setParticipantSession, setSettlementCurrency } from '@/lib/settlementSession'
 
 /**
  * Landing for `/split/:settlementId` (QR deep link). Enter your name, then swipe to claim lines.
  */
 export default function JoinSettlement() {
   const { settlementId } = useParams<{ settlementId: string }>()
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [settlementName, setSettlementName] = useState('')
+
+  useEffect(() => {
+    if (!settlementId) return
+    const c = searchParams.get('c')
+    if (c && /^[A-Z]{3}$/i.test(c)) {
+      setSettlementCurrency(settlementId, c.toUpperCase())
+    }
+  }, [settlementId, searchParams])
+
+  const currencyCode = settlementId ? getSettlementCurrency(settlementId) : 'USD'
+
+  useEffect(() => {
+    if (!settlementId) return
+    getSettlementForSwipe(settlementId).then((s) => {
+      if (s?.name) setSettlementName(s.name)
+    }).catch(() => {})
+  }, [settlementId])
 
   if (!settlementId) {
     return null
@@ -41,8 +59,7 @@ export default function JoinSettlement() {
   }
 
   return (
-    <div className="min-h-screen bg-ds-surface">
-      <TopAppBar />
+    <div className="min-h-screen">
       <PageLayout className="space-y-6">
         <div className="space-y-1">
           <h2 className="font-headline font-extrabold text-2xl text-ds-on-surface">Join settlement</h2>
@@ -51,7 +68,7 @@ export default function JoinSettlement() {
           </p>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-3">
           <label htmlFor="join-name" className="font-label font-semibold text-ds-on-surface text-sm">
             Your name
           </label>
@@ -86,7 +103,7 @@ export default function JoinSettlement() {
           <p className="font-body text-ds-on-surface-variant text-sm mb-4">
             Scan the code or open this link on another device to join the split.
           </p>
-          <SettlementQr settlementId={settlementId} />
+          <SettlementQr settlementId={settlementId} settlementName={settlementName || undefined} currencyCode={currencyCode} />
         </div>
       </PageLayout>
     </div>

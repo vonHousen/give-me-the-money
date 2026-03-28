@@ -164,16 +164,12 @@ export function mockFinishSettlement(settlementId: string): BackendFinishRespons
 
   const itemById = new Map(rec.items.map((i) => [i.id, i]))
 
-  for (const item of itemById.values()) {
-    let sum = 0
-    for (const pid of Object.keys(rec.claims)) {
-      const q = rec.claims[pid]?.[item.id] ?? 0
-      sum += q
-    }
-    if (sum > item.count) {
-      throw new Error(
-        `Claims for "${item.name}" exceed the quantity on the bill (${sum} > ${item.count}).`,
-      )
+  const totalClaimed = new Map<string, number>()
+  for (const userClaims of Object.values(rec.claims)) {
+    for (const [itemId, qty] of Object.entries(userClaims)) {
+      if (qty > 0) {
+        totalClaimed.set(itemId, (totalClaimed.get(itemId) ?? 0) + qty)
+      }
     }
   }
 
@@ -185,8 +181,8 @@ export function mockFinishSettlement(settlementId: string): BackendFinishRespons
       if (qty <= 0) {
         continue
       }
-      const unitPrice = item.count > 0 ? item.price / item.count : item.price
-      const linePrice = roundMoney(unitPrice * qty)
+      const totalQty = totalClaimed.get(item.id) ?? qty
+      const linePrice = roundMoney((qty / totalQty) * item.price)
       myItems.push({
         name: qty > 1 ? `${item.name} x${qty}` : item.name,
         price: linePrice,

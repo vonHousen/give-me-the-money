@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { X, Check } from 'lucide-react'
-import { TopAppBar } from '@/components/TopAppBar'
 import { PageLayout } from '@/components/PageLayout'
-import { SwipeCard } from '@/components/SwipeCard'
+import { SwipeCard, type SwipeCardHandle } from '@/components/SwipeCard'
 import { QuantityPickOverlay } from '@/components/QuantityPickOverlay'
 import { CurrencyDisplay } from '@/components/CurrencyDisplay'
 import {
@@ -15,11 +14,52 @@ import {
 import { normalizeSettlementItem, type SettlementItemWire } from '@/lib/settlementTypes'
 import {
   getParticipantIdFromSession,
+  getSettlementCurrency,
   isSettlementOwnerSession,
 } from '@/lib/settlementSession'
-import { roundMoney } from '@/lib/utils'
+import { formatMoney, roundMoney } from '@/lib/utils'
 
-const TAGS = ['Popular', 'Dish', 'Extra']
+function ItemCard({ item, currencyCode }: { item: SettlementItemWire; currencyCode: string }) {
+  const qty = item.quantity
+  const unit = roundMoney(item.unitPrice)
+
+  return (
+    <div className="aspect-[3/4] flex flex-col">
+      <div className="flex-grow bg-ds-surface-container-high relative overflow-hidden">
+        <div className="absolute inset-0 flex items-center justify-center text-ds-on-surface-variant opacity-20 font-headline text-8xl font-extrabold select-none">
+          🍽
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-transparent" />
+
+        <div className="absolute top-5 left-5 flex flex-wrap gap-2">
+          <span className="px-3 py-1.5 bg-ds-primary/90 backdrop-blur-md rounded-full shadow-sm text-[9px] font-bold uppercase tracking-[0.15em] text-ds-on-primary">
+            ×{qty} on bill
+          </span>
+        </div>
+
+        <div className="absolute bottom-4 inset-x-0 flex justify-center pointer-events-none opacity-25">
+          <span className="font-label text-[9px] font-bold tracking-[0.3em] uppercase text-white">
+            ← swipe to decide →
+          </span>
+        </div>
+      </div>
+
+      <div className="p-6 space-y-4 bg-ds-surface-container-lowest dark:bg-ds-surface-container">
+        <div>
+          <h2 className="font-headline font-extrabold text-2xl text-ds-on-surface tracking-tight leading-tight">
+            {item.name}
+          </h2>
+          <p className="font-body text-xs text-ds-on-surface-variant/90 mt-1.5 tabular-nums">
+            Unit {formatMoney(unit, currencyCode)}
+            {qty > 1 ? ' · line total below' : null}
+          </p>
+        </div>
+        <CurrencyDisplay amount={item.price} currencyCode={currencyCode} className="justify-start scale-75 origin-left" />
+      </div>
+    </div>
+  )
+}
 
 function ItemImage({ itemId, alt, className }: { itemId: string; alt: string; className: string }) {
   const [src, setSrc] = useState<string | null>(null)
@@ -53,8 +93,10 @@ export default function Swipe() {
   /** Bumps when the last-item claim fails so the deck remounts with a centered card. */
   const [swipeEpoch, setSwipeEpoch] = useState(0)
   const [finishing, setFinishing] = useState(false)
+  const swipeRef = useRef<SwipeCardHandle>(null)
 
   const participantId = settlementId ? getParticipantIdFromSession(settlementId) : null
+  const currencyCode = settlementId ? getSettlementCurrency(settlementId) : 'USD'
 
   useEffect(() => {
     if (!settlementId) {
@@ -96,8 +138,6 @@ export default function Swipe() {
 
   const current = items[index]
   const total = items.length
-
-  const tagForIndex = TAGS[index % TAGS.length]
 
   const submitClaim = useCallback(
     async (quantityClaimed: number) => {
@@ -163,7 +203,7 @@ export default function Swipe() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-ds-surface flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <p className="font-body text-ds-on-surface-variant">Loading…</p>
       </div>
     )
@@ -171,9 +211,8 @@ export default function Swipe() {
 
   if (loadError || !participantId) {
     return (
-      <div className="min-h-screen bg-ds-surface">
-        <TopAppBar />
-        <PageLayout className="space-y-4 pt-8">
+      <div className="min-h-screen">
+        <PageLayout className="space-y-4">
           <p className="font-body text-ds-on-surface">
             {loadError ?? 'Join this settlement first with your name.'}
           </p>
@@ -193,18 +232,12 @@ export default function Swipe() {
   }
 
   const lineQty = current.quantity
-  const unitLabel = roundMoney(current.unitPrice)
-  const nextItem = index + 1 < items.length ? items[index + 1] : null
+  const behindSlots = items
+    .slice(index + 1, index + 3)
+    .map((item) => <ItemCard key={item.id} item={item} currencyCode={currencyCode} />)
 
   return (
-    <div className="min-h-screen bg-ds-surface">
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-ds-primary rounded-full blur-[120px] opacity-10" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-ds-secondary-container rounded-full blur-[120px] opacity-20" />
-      </div>
-
-      <TopAppBar />
-
+    <div className="min-h-screen">
       <PageLayout className="flex flex-col items-center gap-6">
         <div className="w-full flex items-center justify-between">
           <p className="font-label text-ds-on-surface-variant text-xs uppercase tracking-widest font-bold">
@@ -229,6 +262,7 @@ export default function Swipe() {
           </div>
         ) : pickStep === 1 ? (
           <SwipeCard
+            ref={swipeRef}
             topCardKey={`${current.id}-${swipeEpoch}`}
             onSwipe={handleCardSwipe}
             className="w-full"
@@ -306,6 +340,9 @@ export default function Swipe() {
                 <CurrencyDisplay amount={current.price} className="justify-start scale-75 origin-left" />
               </div>
             </div>
+            behindSlots={behindSlots.length > 0 ? behindSlots : undefined}
+          >
+            <ItemCard item={current} currencyCode={currencyCode} />
           </SwipeCard>
         ) : (
           <QuantityPickOverlay
@@ -324,37 +361,46 @@ export default function Swipe() {
         ) : null}
 
         {!finishing && pickStep === 1 ? (
-          <div className="flex gap-8 items-center justify-center w-full pt-2">
-            <div className="flex flex-col items-center gap-2">
-              <button
-                type="button"
-                aria-label="Decline"
-                disabled={claimSubmitting}
-                onClick={() => void submitClaim(0)}
-                className="w-16 h-16 rounded-full bg-ds-surface-container-lowest shadow-md flex items-center justify-center hover:bg-ds-tertiary/10 transition-all active:scale-90 duration-150 disabled:opacity-50"
-              >
-                <X className="w-7 h-7 text-ds-tertiary" />
-              </button>
-              <span className="font-label text-[9px] font-bold uppercase tracking-[0.2em] text-ds-on-surface-variant opacity-40">
-                Pass
-              </span>
-            </div>
+          <>
+            <div className="flex gap-8 items-center justify-center w-full pt-2">
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  aria-label="Decline"
+                  disabled={claimSubmitting}
+                  onClick={() => swipeRef.current?.triggerSwipe('left')}
+                  className="w-16 h-16 rounded-full bg-ds-surface-container-lowest shadow-md flex items-center justify-center hover:bg-ds-tertiary/10 transition-all active:scale-90 duration-150 disabled:opacity-50"
+                >
+                  <X className="w-7 h-7 text-ds-tertiary" />
+                </button>
+                <span className="font-label text-[9px] font-bold uppercase tracking-[0.2em] text-ds-on-surface-variant opacity-40">
+                  Pass
+                </span>
+              </div>
 
-            <div className="flex flex-col items-center gap-2">
-              <button
-                type="button"
-                aria-label="Accept"
-                disabled={claimSubmitting}
-                onClick={() => handleCardSwipe('right')}
-                className="w-16 h-16 rounded-full bg-ds-primary shadow-lg shadow-ds-primary/20 flex items-center justify-center hover:opacity-90 transition-all active:scale-90 duration-150 disabled:opacity-50"
-              >
-                <Check className="w-7 h-7 text-ds-on-primary" />
-              </button>
-              <span className="font-label text-[9px] font-bold uppercase tracking-[0.2em] text-ds-primary">
-                Mine
-              </span>
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  aria-label="Accept"
+                  disabled={claimSubmitting}
+                  onClick={() =>
+                    lineQty > 1
+                      ? handleCardSwipe('right')
+                      : swipeRef.current?.triggerSwipe('right')
+                  }
+                  className="w-16 h-16 rounded-full bg-ds-primary shadow-lg shadow-ds-primary/20 flex items-center justify-center hover:opacity-90 transition-all active:scale-90 duration-150 disabled:opacity-50"
+                >
+                  <Check className="w-7 h-7 text-ds-on-primary" />
+                </button>
+                <span className="font-label text-[9px] font-bold uppercase tracking-[0.2em] text-ds-primary">
+                  Mine
+                </span>
+              </div>
             </div>
-          </div>
+            <p className="font-body text-xs text-ds-on-surface-variant/50 text-center w-full">
+              Swipe right if this is yours, left to pass
+            </p>
+          </>
         ) : null}
       </PageLayout>
     </div>

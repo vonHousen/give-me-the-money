@@ -1,6 +1,6 @@
 from textwrap import dedent
 
-from app.image_processing.response_formats import ProcessedReceipt
+from app.image_processing.ocr.response_formats import ProcessedReceipt
 
 PROMPT_RECEIPT_PARSER = dedent(f"""
     Extract line items from this receipt image.
@@ -19,6 +19,12 @@ PROMPT_RECEIPT_PARSER = dedent(f"""
         - to sum up: 'Napar imbirowy.A 3 x18,00 54,00A' means that there
           where 3 intances of 'Napar imbirowy'
             with a 18,00 price each and the total cost of all these instances is 54,00;
+    - The receipt has a 'PARAGON FISKALNY' header.
+      Just above it, on the left, you should find the NIP number
+      (usually 10 digits).
+    - At the top of the receipt (above the 'PARAGON FISKALNY' header
+      and NIP number) you can find a restaurant's address and name
+      (often the name is in bold or there is a logo for it).
     </hints>
 
 
